@@ -64,13 +64,13 @@
         .tab-view.active { display: flex; flex-direction: column; }
 
         /* FLASHCARD STYLES */
-        .flashcard-container { flex: 1; display: flex; justify-content: center; align-items: center; perspective: 1000px; }
+        .flashcard-container { flex: 1; display: flex; justify-content: center; align-items: center; perspective: 1400px; }
         .card {
-            width: 100%; max-width: 400px; height: 300px;
-            position: relative; transform-style: preserve-3d; transition: transform 0.6s;
-            cursor: pointer;
+            width: 100%; max-width: 420px; height: 320px;
+            position: relative; transform-style: preserve-3d; transition: transform 0.6s, box-shadow 0.2s;
+            cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
-        .card.flipped { transform: rotateY(180deg); }
+        .card.flipped { transform: rotateY(180deg); box-shadow: 0 18px 40px rgba(0,0,0,0.6); }
         .card-face {
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden;
@@ -81,11 +81,17 @@
         .card-back { transform: rotateY(180deg); background: #000; border-color: #fff; }
 
         .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        .btn { padding: 12px 24px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: white; cursor: pointer; }
-        .btn-primary { background: white; color: black; border: none; }
+        .btn { padding: 12px 24px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: white; cursor: pointer; transition: transform 0.12s, filter 0.12s; }
+        .btn:hover { transform: translateY(-2px); background: #1a1a1a; }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: white; color: black; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .btn-primary:hover { filter: brightness(0.96); }
+
+        /* Visible focus ring for keyboard users */
+        :focus-visible { outline: 3px solid #4D90FE; outline-offset: 3px; border-radius: 8px; }
 
         /* DATABASE STYLES */
-        textarea { width: 100%; height: 100px; background: #000; color: #fff; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; }
+        textarea { width: 100%; height: 100px; background: #070707; color: #fff; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; }
         .db-item { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         .db-key { font-weight: bold; }
 
@@ -101,6 +107,12 @@
         /* Overlay for sidebar */
         #overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 900; display: none; }
         #overlay.show { display: block; }
+
+        /* Responsive tweaks */
+        @media (max-width: 480px) {
+            .card { max-width: 320px; height: 260px; font-size: 1.1rem; }
+            #sidebar { width: 240px; left: -240px; }
+        }
 
     </style>
 </head>
@@ -150,7 +162,13 @@
                 <h3>Add Data (JSON)</h3>
                 <p style="color:#666; font-size: 0.8rem;">Format: [{"q":"Front", "a":"Back"}]</p>
                 <textarea id="json-input" placeholder='[{"q":"Question", "a":"Answer"}]'></textarea>
-                <button class="btn btn-primary" style="width:100%" onclick="importJson()">Import JSON</button>
+                        <!-- file input for direct JSON import -->
+                        <input id="file-input" type="file" accept="application/json,.json" style="display:none" onchange="importJsonFile(event)">
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import JSON</button>
+                            <button class="btn" style="width:160px" onclick="exportJson()" aria-label="Export JSON">Export JSON</button>
+                            <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
+                        </div>
                 
                 <h3>Current Entries</h3>
                 <div id="db-list"></div>
@@ -174,10 +192,51 @@
         let cardIndex = 0;
         let sessionStats = { total: 0, correct: 0 };
 
+        // Utility: create safe DOM ids from arbitrary names
+        function safeId(name){
+            return String(name || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, '-');
+        }
+
+        // Validate imported JSON for card arrays: [{q: string, a: string}]
+        function isValidCardArray(arr){
+            if(!Array.isArray(arr)) return false;
+            return arr.every(c => c && typeof c === 'object' && typeof c.q === 'string' && typeof c.a === 'string');
+        }
+
         // --- SIDEBAR & NAV LOGIC ---
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('show');
+        function saveSidebarState(isOpen){
+            try{ localStorage.setItem('monoSidebarOpen', isOpen ? '1' : '0'); }catch(e){}
+        }
+
+        function loadSidebarState(){
+            try{
+                const val = localStorage.getItem('monoSidebarOpen');
+                if(val === '1'){
+                    document.getElementById('sidebar').classList.add('open');
+                    document.getElementById('overlay').classList.add('show');
+                } else {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('overlay').classList.remove('show');
+                }
+            }catch(e){}
+        }
+
+        function toggleSidebar(forceState){
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('overlay');
+            if(typeof forceState === 'boolean'){
+                sb.classList.toggle('open', forceState);
+                ov.classList.toggle('show', forceState);
+                saveSidebarState(forceState);
+                return;
+            }
+            const willOpen = !sb.classList.contains('open');
+            sb.classList.toggle('open');
+            ov.classList.toggle('show');
+            saveSidebarState(willOpen);
         }
 
         function renderSidebar() {
@@ -191,11 +250,15 @@
                 const title = document.createElement('div');
                 title.className = 'subject-title';
                 title.innerHTML = `${sub} <span>▾</span>`;
-                title.onclick = () => document.getElementById(`list-${sub}`).classList.toggle('show');
+                const safe = safeId(sub);
+                title.onclick = () => {
+                    const el = document.getElementById(`list-${safe}`);
+                    if(el) el.classList.toggle('show');
+                };
 
                 const list = document.createElement('div');
                 list.className = 'sub-subject-list';
-                list.id = `list-${sub}`;
+                list.id = `list-${safe}`;
                 
                 // Add "Add Sub-subject" button inside list
                 const addSubBtn = document.createElement('div');
@@ -266,8 +329,7 @@
             const backEl = document.getElementById('card-back');
             
             cardEl.classList.remove('flipped'); // Reset flip
-            
-            if (!currentSubject || !appData[currentSubject][currentSub].length) {
+            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub]) || appData[currentSubject][currentSub].length === 0) {
                 frontEl.innerText = "No cards here.";
                 backEl.innerText = "Go to DATA tab to add JSON.";
                 return;
@@ -315,27 +377,146 @@
             const input = document.getElementById('json-input').value;
             try {
                 const newCards = JSON.parse(input);
-                if (Array.isArray(newCards)) {
-                    // Append new cards to existing ones
-                    appData[currentSubject][currentSub].push(...newCards);
-                    saveData();
-                    alert(`Added ${newCards.length} cards!`);
-                    document.getElementById('json-input').value = ''; // Clear
-                    renderDbList();
-                    renderCard(); // Refresh current view
-                } else {
-                    alert("JSON must be an array: [...]");
+                if (!isValidCardArray(newCards)) {
+                    alert('Invalid JSON shape. Provide an array of objects with string `q` and `a` fields.');
+                    return;
                 }
+
+                // Ensure target array exists
+                if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
+
+                appData[currentSubject][currentSub].push(...newCards);
+                saveData();
+                alert(`Added ${newCards.length} cards!`);
+                document.getElementById('json-input').value = ''; // Clear
+                renderDbList();
+                renderCard(); // Refresh current view
+                
             } catch (e) {
                 alert("Invalid JSON format");
             }
         }
 
+        // Import JSON from a selected file (local file input)
+        function importJsonFile(e){
+            if (!currentSubject || !currentSub) {
+                alert("Please select a Subject and Topic from the sidebar first.");
+                // clear file input if any
+                if(e && e.target) e.target.value = '';
+                return;
+            }
+            const file = (e && e.target && e.target.files && e.target.files[0]) || null;
+            if(!file){ return; }
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                try{
+                    const parsed = JSON.parse(String(ev.target.result));
+                    if(!isValidCardArray(parsed)){
+                        alert('Invalid JSON shape in file. Provide an array of {q:string,a:string}.');
+                        return;
+                    }
+
+                    if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
+                    appData[currentSubject][currentSub].push(...parsed);
+                    saveData();
+                    alert(`Imported ${parsed.length} cards from file.`);
+                    renderDbList();
+                    renderCard();
+                }catch(err){
+                    alert('Unable to parse JSON file.');
+                } finally {
+                    // reset file input so same file can be re-selected later
+                    if(e && e.target) e.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Export current topic cards as JSON file
+        function exportJson(){
+            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub])){
+                alert('Select a Subject and Topic first to export.');
+                return;
+            }
+            const data = appData[currentSubject][currentSub];
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fileName = `${safeId(currentSubject)}-${safeId(currentSub)}.json`;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        // Navigate to previous card
+        function prevCard(){
+            if (!currentSubject || !currentSub) return;
+            cardIndex = Math.max(0, cardIndex - 1);
+            renderCard();
+        }
+
+        // Keyboard accessibility: flip with Space/Enter, navigate with arrows
+        document.addEventListener('keydown', (e) => {
+            // Do nothing if focus is in a text input/textarea
+            const tag = document.activeElement && document.activeElement.tagName;
+            if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+            const activeTab = document.querySelector('.tab-view.active');
+            if(activeTab && activeTab.id === 'tab-flashcard'){
+                if(e.code === 'Space' || e.code === 'Enter'){
+                    e.preventDefault();
+                    flipCard();
+                } else if(e.code === 'ArrowRight'){
+                    e.preventDefault();
+                    nextCard(false);
+                } else if(e.code === 'ArrowLeft'){
+                    e.preventDefault();
+                    prevCard();
+                }
+            }
+        });
+
+        // Add some ARIA and keyboard focusability
+        document.querySelectorAll('.menu-btn').forEach(el => {
+            el.setAttribute('role','button');
+            el.setAttribute('tabindex','0');
+            el.setAttribute('aria-label','Toggle menu');
+            el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); toggleSidebar(); } });
+        });
+
+        // Make card keyboard-focusable
+        const initCardFocus = () => {
+            const card = document.getElementById('active-card');
+            if(card){
+                card.setAttribute('role','button');
+                card.setAttribute('tabindex','0');
+                card.setAttribute('aria-label','Flashcard - press space or enter to flip');
+                card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); flipCard(); } });
+            }
+        };
+
+        // when loading topic, focus the card for keyboard users
+        const origLoadTopic = loadTopic;
+        loadTopic = function(sub, topic){
+            origLoadTopic(sub, topic);
+            setTimeout(()=>{
+                initCardFocus();
+                const card = document.getElementById('active-card');
+                if(card) card.focus();
+            }, 50);
+        };
+
+        // initialize focusability on startup
+        initCardFocus();
+
         function renderDbList() {
             const list = document.getElementById('db-list');
             list.innerHTML = '';
             
-            if (!currentSubject) return;
+            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub])) return;
 
             const cards = appData[currentSubject][currentSub];
             cards.forEach((c, idx) => {
@@ -367,6 +548,8 @@
 
         // --- INIT ---
         renderSidebar();
+        // restore sidebar open/closed state
+        loadSidebarState();
 
     </script>
 </body>
