@@ -171,14 +171,17 @@ What is speed? -!- Distance over time'></textarea>
                             <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
                         </div>
                 
-                <h3>Current Entries</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 30px;">
+                    <h3 style="margin: 0;">Current Entries</h3>
+                    <button class="btn" onclick="clearAllCards()" style="padding: 8px 16px; font-size: 0.9rem;">Clear All</button>
+                </div>
                 <div id="db-list"></div>
             </div>
 
         </section>
 
         <nav>
-            <div class="nav-item active" onclick="switchTab('flashcard', this)">STUDY</div>
+            <div class="nav-item active" onclick="switchTab('flashcard', this)">FLASHCARDS</div>
             <div class="nav-item" onclick="switchTab('performance', this)">STATS</div>
             <div class="nav-item" onclick="switchTab('database', this)">DATA</div>
         </nav>
@@ -192,6 +195,17 @@ What is speed? -!- Distance over time'></textarea>
         let currentSub = null;
         let cardIndex = 0;
         let sessionStats = { total: 0, correct: 0 };
+        let shuffledCards = []; // Randomized order of cards
+
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array]; // Create a copy
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
 
         // Utility: create safe DOM ids from arbitrary names
         function safeId(name){
@@ -329,6 +343,13 @@ What is speed? -!- Distance over time'></textarea>
             cardIndex = 0;
             sessionStats = { total: 0, correct: 0 };
             
+            // Shuffle cards when loading topic
+            if (appData[sub] && appData[sub][topic] && Array.isArray(appData[sub][topic])) {
+                shuffledCards = shuffleArray(appData[sub][topic]);
+            } else {
+                shuffledCards = [];
+            }
+            
             document.getElementById('header-title').innerText = `${sub} / ${topic}`;
             toggleSidebar(); // Close sidebar
             renderCard();
@@ -351,17 +372,16 @@ What is speed? -!- Distance over time'></textarea>
             const backEl = document.getElementById('card-back');
             
             cardEl.classList.remove('flipped'); // Reset flip
-            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub]) || appData[currentSubject][currentSub].length === 0) {
+            if (!currentSubject || !currentSub || shuffledCards.length === 0) {
                 frontEl.innerText = "No cards here.";
                 backEl.innerText = "Go to DATA tab to add cards.";
                 return;
             }
 
-            const cards = appData[currentSubject][currentSub];
             // Loop if we reach end
-            if (cardIndex >= cards.length) cardIndex = 0;
+            if (cardIndex >= shuffledCards.length) cardIndex = 0;
 
-            const card = cards[cardIndex];
+            const card = shuffledCards[cardIndex];
             frontEl.innerText = card.q;
             backEl.innerText = card.a;
         }
@@ -428,9 +448,38 @@ What is speed? -!- Distance over time'></textarea>
             // Ensure target array exists
             if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
 
-            appData[currentSubject][currentSub].push(...newCards);
+            // Check for duplicates
+            const existingCards = appData[currentSubject][currentSub];
+            let addedCount = 0;
+            let duplicateCount = 0;
+            
+            newCards.forEach(newCard => {
+                // Check if card already exists (same question)
+                const isDuplicate = existingCards.some(existing => 
+                    existing.q.trim().toLowerCase() === newCard.q.trim().toLowerCase()
+                );
+                
+                if (!isDuplicate) {
+                    existingCards.push(newCard);
+                    addedCount++;
+                } else {
+                    duplicateCount++;
+                }
+            });
+
             saveData();
-            alert(`Added ${newCards.length} card${newCards.length !== 1 ? 's' : ''}!`);
+            
+            let message = `Added ${addedCount} card${addedCount !== 1 ? 's' : ''}!`;
+            if (duplicateCount > 0) {
+                message += `\n${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} skipped.`;
+            }
+            alert(message);
+            
+            // Reshuffle cards after import
+            if (appData[currentSubject] && appData[currentSubject][currentSub]) {
+                shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
+            }
+            
             document.getElementById('json-input').value = ''; // Clear
             renderDbList();
             renderCard(); // Refresh current view
@@ -456,9 +505,38 @@ What is speed? -!- Distance over time'></textarea>
                     }
 
                     if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
-                    appData[currentSubject][currentSub].push(...parsed);
+                    
+                    // Check for duplicates
+                    const existingCards = appData[currentSubject][currentSub];
+                    let addedCount = 0;
+                    let duplicateCount = 0;
+                    
+                    parsed.forEach(newCard => {
+                        const isDuplicate = existingCards.some(existing => 
+                            existing.q.trim().toLowerCase() === newCard.q.trim().toLowerCase()
+                        );
+                        
+                        if (!isDuplicate) {
+                            existingCards.push(newCard);
+                            addedCount++;
+                        } else {
+                            duplicateCount++;
+                        }
+                    });
+                    
                     saveData();
-                    alert(`Imported ${parsed.length} cards from file.`);
+                    
+                    let message = `Imported ${addedCount} card${addedCount !== 1 ? 's' : ''} from file.`;
+                    if (duplicateCount > 0) {
+                        message += `\n${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} skipped.`;
+                    }
+                    alert(message);
+                    
+                    // Reshuffle cards after import
+                    if (appData[currentSubject] && appData[currentSubject][currentSub]) {
+                        shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
+                    }
+                    
                     renderDbList();
                     renderCard();
                 }catch(err){
@@ -576,8 +654,36 @@ What is speed? -!- Distance over time'></textarea>
             if(confirm('Delete this card?')) {
                 appData[currentSubject][currentSub].splice(index, 1);
                 saveData();
+                
+                // Reshuffle after deletion
+                shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
+                if (cardIndex >= shuffledCards.length) cardIndex = 0;
+                
                 renderDbList();
                 renderCard();
+            }
+        }
+
+        function clearAllCards() {
+            if (!currentSubject || !currentSub) {
+                alert('Please select a Subject and Topic first.');
+                return;
+            }
+            
+            const cardCount = appData[currentSubject][currentSub].length;
+            if (cardCount === 0) {
+                alert('No cards to clear.');
+                return;
+            }
+            
+            if(confirm(`Are you sure you want to delete all ${cardCount} cards from "${currentSub}"?\n\nThis action cannot be undone.`)) {
+                appData[currentSubject][currentSub] = [];
+                saveData();
+                shuffledCards = [];
+                cardIndex = 0;
+                renderDbList();
+                renderCard();
+                alert('All cards cleared.');
             }
         }
 
