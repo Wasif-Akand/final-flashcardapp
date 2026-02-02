@@ -159,13 +159,14 @@
             </div>
 
             <div id="tab-database" class="tab-view">
-                <h3>Add Data (JSON)</h3>
-                <p style="color:#666; font-size: 0.8rem;">Format: [{"q":"Front", "a":"Back"}]</p>
-                <textarea id="json-input" placeholder='[{"q":"Question", "a":"Answer"}]'></textarea>
+                <h3>Add Data</h3>
+                <p style="color:#666; font-size: 0.8rem;">Format: Question -!- Answer (one per line) OR JSON: [{"q":"Front", "a":"Back"}]</p>
+                <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
+What is speed? -!- Distance over time'></textarea>
                         <!-- file input for direct JSON import -->
                         <input id="file-input" type="file" accept="application/json,.json" style="display:none" onchange="importJsonFile(event)">
                         <div style="display:flex; gap:10px;">
-                            <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import JSON</button>
+                            <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import Data</button>
                             <button class="btn" style="width:160px" onclick="exportJson()" aria-label="Export JSON">Export JSON</button>
                             <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
                         </div>
@@ -204,6 +205,27 @@
         function isValidCardArray(arr){
             if(!Array.isArray(arr)) return false;
             return arr.every(c => c && typeof c === 'object' && typeof c.q === 'string' && typeof c.a === 'string');
+        }
+
+        // NEW: Parse text format "Question -!- Answer" into JSON
+        function parseTextFormat(text){
+            const lines = text.split('\n').filter(line => line.trim().length > 0);
+            const cards = [];
+            
+            for(let line of lines){
+                if(line.includes('-!-')){
+                    const parts = line.split('-!-');
+                    if(parts.length >= 2){
+                        const q = parts[0].trim();
+                        const a = parts.slice(1).join('-!-').trim(); // In case answer contains -!-
+                        if(q && a){
+                            cards.push({q, a});
+                        }
+                    }
+                }
+            }
+            
+            return cards;
         }
 
         // --- SIDEBAR & NAV LOGIC ---
@@ -331,7 +353,7 @@
             cardEl.classList.remove('flipped'); // Reset flip
             if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub]) || appData[currentSubject][currentSub].length === 0) {
                 frontEl.innerText = "No cards here.";
-                backEl.innerText = "Go to DATA tab to add JSON.";
+                backEl.innerText = "Go to DATA tab to add cards.";
                 return;
             }
 
@@ -374,27 +396,44 @@
                 return;
             }
 
-            const input = document.getElementById('json-input').value;
-            try {
-                const newCards = JSON.parse(input);
-                if (!isValidCardArray(newCards)) {
-                    alert('Invalid JSON shape. Provide an array of objects with string `q` and `a` fields.');
+            const input = document.getElementById('json-input').value.trim();
+            if(!input){
+                alert("Please enter some data first.");
+                return;
+            }
+            
+            let newCards = [];
+            
+            // Try parsing as text format first (Question -!- Answer)
+            if(input.includes('-!-')){
+                newCards = parseTextFormat(input);
+                if(newCards.length === 0){
+                    alert('No valid cards found. Make sure to use format: Question -!- Answer');
                     return;
                 }
-
-                // Ensure target array exists
-                if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
-
-                appData[currentSubject][currentSub].push(...newCards);
-                saveData();
-                alert(`Added ${newCards.length} cards!`);
-                document.getElementById('json-input').value = ''; // Clear
-                renderDbList();
-                renderCard(); // Refresh current view
-                
-            } catch (e) {
-                alert("Invalid JSON format");
+            } else {
+                // Try parsing as JSON
+                try {
+                    newCards = JSON.parse(input);
+                    if (!isValidCardArray(newCards)) {
+                        alert('Invalid JSON format. Use: [{"q":"Question", "a":"Answer"}] OR text format: Question -!- Answer');
+                        return;
+                    }
+                } catch (e) {
+                    alert("Invalid format. Use either:\n\nText: Question -!- Answer\nor\nJSON: [{\"q\":\"Question\", \"a\":\"Answer\"}]");
+                    return;
+                }
             }
+
+            // Ensure target array exists
+            if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
+
+            appData[currentSubject][currentSub].push(...newCards);
+            saveData();
+            alert(`Added ${newCards.length} card${newCards.length !== 1 ? 's' : ''}!`);
+            document.getElementById('json-input').value = ''; // Clear
+            renderDbList();
+            renderCard(); // Refresh current view
         }
 
         // Import JSON from a selected file (local file input)
