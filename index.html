@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MonoFlash</title>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXul0bzX2-X9qj3t51u6EjhZFFE7mi1ac",
+            authDomain: "flashcards-fb9ab.firebaseapp.com",
+            projectId: "flashcards-fb9ab",
+            storageBucket: "flashcards-fb9ab.firebasestorage.app",
+            messagingSenderId: "975345059409",
+            appId: "1:975345059409:web:fb9048868da5afe6f45a70"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        window.firebaseDB = db;
+        window.firebaseDoc = doc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseGetDoc = getDoc;
+    </script>
+    
     <style>
         /* --- CORE VARIABLES & RESET --- */
         :root {
@@ -13,6 +37,8 @@
             --text: #ffffff;
             --text-dim: #888888;
             --accent: #ffffff;
+            --success: #4caf50;
+            --error: #f44336;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -34,15 +60,45 @@
         }
         #sidebar.open { left: 0; }
         
-        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); font-weight: bold; }
+        .sidebar-header { 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-header-title { font-size: 1.1rem; }
+        .sidebar-subtitle { 
+            font-size: 0.7rem; 
+            color: var(--text-dim); 
+            font-weight: normal;
+        }
         .sidebar-content { flex: 1; overflow-y: auto; padding: 10px; }
         
         .subject-item { margin-bottom: 10px; }
-        .subject-title { font-weight: bold; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; }
+        .subject-title { font-weight: bold; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .sub-subject-list { margin-left: 15px; border-left: 1px solid var(--border); display: none; }
         .sub-subject-list.show { display: block; }
-        .sub-item { padding: 10px; color: var(--text-dim); cursor: pointer; }
+        .sub-item { padding: 10px; color: var(--text-dim); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .sub-item:hover, .sub-item.active { color: var(--text); background: #222; }
+        .card-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 8px; }
+
+        .sync-btn-container { padding: 10px; border-top: 1px solid var(--border); background: #0a0a0a; }
+        .sync-btn {
+            width: 100%; padding: 10px; background: #222; color: white; border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 6px;
+        }
+        .sync-btn:hover { background: #2a2a2a; }
+        .sync-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+        .sync-status-dot.online { background: var(--success); box-shadow: 0 0 5px var(--success); animation: pulse 2s infinite; }
+        .sync-status-dot.error { background: var(--error); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
 
         .add-btn { padding: 10px; border: 1px dashed var(--border); text-align: center; margin-top: 10px; cursor: pointer; color: var(--text-dim); }
 
@@ -91,13 +147,23 @@
         :focus-visible { outline: 3px solid #4D90FE; outline-offset: 3px; border-radius: 8px; }
 
         /* DATABASE STYLES */
-        textarea { width: 100%; height: 100px; background: #070707; color: #fff; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; }
+        textarea { width: 100%; height: 100px; background: #070707; color: #fff; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; border-radius: 6px; font-family: inherit; }
         .db-item { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         .db-key { font-weight: bold; }
 
         /* PERFORMANCE STYLES */
         .stat-box { border: 1px solid var(--border); padding: 20px; margin-bottom: 10px; border-radius: 8px; text-align: center; }
         .stat-num { font-size: 2rem; font-weight: bold; }
+        .container-stat { border: 1px solid var(--border); padding: 15px; margin-bottom: 8px; border-radius: 6px; }
+        .container-stat-header { font-weight: bold; margin-bottom: 8px; }
+        .container-stat-detail { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* CONTAINER SELECTOR */
+        .container-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
+        .container-btn { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap; }
+        .container-btn:hover { background: #1a1a1a; color: var(--text); }
+        .container-btn.active { background: white; color: black; border-color: white; font-weight: bold; }
+        .container-info { font-size: 0.75rem; color: var(--text-dim); margin-top: 6px; width: 100%; }
 
         /* --- BOTTOM NAV --- */
         nav { display: flex; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); }
@@ -110,8 +176,20 @@
 
         /* Responsive tweaks */
         @media (max-width: 480px) {
-            .card { max-width: 320px; height: 260px; font-size: 1.1rem; }
+            .card { max-width: 300px; height: 220px; font-size: 1rem; }
             #sidebar { width: 240px; left: -240px; }
+            
+            /* Container selector - much more compact */
+            .container-selector { padding: 5px; gap: 4px; margin-bottom: 8px; }
+            .container-btn { padding: 5px 8px; font-size: 0.7rem; min-width: auto; }
+            .container-info { font-size: 0.65rem; margin-top: 4px; }
+            
+            /* Flashcard controls - more spacing */
+            .controls { gap: 15px; margin-top: 15px; padding: 0 10px; }
+            .btn { padding: 10px 20px; font-size: 0.9rem; flex: 1; max-width: 150px; }
+            
+            /* Flashcard container - less height to fit controls */
+            .flashcard-container { flex: 0.8; }
         }
 
     </style>
@@ -120,10 +198,29 @@
 
     <div id="overlay" onclick="toggleSidebar()"></div>
     <aside id="sidebar">
-        <div class="sidebar-header">SUBJECTS</div>
+        <div class="sidebar-header">
+            <div class="sidebar-header-title">SUBJECTS</div>
+            <div class="sidebar-subtitle">📦 Cards sync • 📊 Progress stays local</div>
+        </div>
         <div class="sidebar-content" id="subject-list">
-            </div>
+            <!-- Subjects load here -->
+        </div>
+        
         <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
+        
+        <!-- SYNC SETTINGS -->
+        <div class="sync-btn-container">
+            <button class="sync-btn" onclick="manualSync()">
+                <div class="sync-status-dot" id="sync-dot"></div>
+                <span id="sync-text">Sync Cards</span>
+            </button>
+            <button class="sync-btn" onclick="changeSyncId()">
+                <span>🔗 Link Device</span>
+            </button>
+            <div style="font-size:0.65rem; color:#666; margin-top:5px; text-align:center; font-family: monospace;">
+                ID: <span id="current-device-id">...</span>
+            </div>
+        </div>
     </aside>
 
     <main id="main">
@@ -135,6 +232,11 @@
         <section id="content-area">
             
             <div id="tab-flashcard" class="tab-view active">
+                <!-- Container Selector (includes Review Missed button) -->
+                <div class="container-selector" id="container-selector" style="display: none;">
+                    <!-- Buttons will be added here dynamically -->
+                </div>
+                
                 <div class="flashcard-container">
                     <div class="card" onclick="flipCard()" id="active-card">
                         <div class="card-face card-front" id="card-front">Select a sub-subject</div>
@@ -150,11 +252,24 @@
             <div id="tab-performance" class="tab-view">
                 <div class="stat-box">
                     <div class="stat-num" id="stat-total">0</div>
-                    <div>Cards Reviewed</div>
+                    <div>Cards Reviewed (This Session)</div>
                 </div>
                 <div class="stat-box" style="border-color: #fff;">
                     <div class="stat-num" id="stat-score">0%</div>
                     <div>Accuracy</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="stat-due">-</div>
+                    <div>Cards Due Today</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="stat-mastered">-</div>
+                    <div>Cards Mastered (7+ days)</div>
+                </div>
+                
+                <!-- Container-specific stats -->
+                <div id="container-stats" style="margin-top: 20px;">
+                    <!-- Container stats will be added here dynamically -->
                 </div>
             </div>
 
@@ -163,13 +278,13 @@
                 <p style="color:#666; font-size: 0.8rem;">Format: Question -!- Answer (one per line) OR JSON: [{"q":"Front", "a":"Back"}]</p>
                 <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
 What is speed? -!- Distance over time'></textarea>
-                        <!-- file input for direct JSON import -->
-                        <input id="file-input" type="file" accept="application/json,.json" style="display:none" onchange="importJsonFile(event)">
-                        <div style="display:flex; gap:10px;">
-                            <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import Data</button>
-                            <button class="btn" style="width:160px" onclick="exportJson()" aria-label="Export JSON">Export JSON</button>
-                            <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
-                        </div>
+                <!-- file input for direct JSON import -->
+                <input id="file-input" type="file" accept="application/json,.json" style="display:none" onchange="importJsonFile(event)">
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import Data</button>
+                    <button class="btn" style="width:160px" onclick="exportJson()" aria-label="Export JSON">Export JSON</button>
+                    <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
+                </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 30px;">
                     <h3 style="margin: 0;">Current Entries</h3>
@@ -188,18 +303,231 @@ What is speed? -!- Distance over time'></textarea>
     </main>
 
     <script>
-        // --- DATA STORE ---
-        // Structure: { "Physics": { "Motion": [ {q, a, stats} ] } }
-        let appData = JSON.parse(localStorage.getItem('monoFlashData')) || {};
+        // ==================== DEVICE ID & FIREBASE SYNC ====================
+        
+        console.log('🎉 MonoFlash initialized!');
+        console.log('📦 Card content syncs to Firebase');
+        console.log('📊 SRS progress stays local');
+        
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('monoFlashDeviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('monoFlashDeviceId', deviceId);
+            }
+            return deviceId;
+        }
+        
+        const DEVICE_ID = getDeviceId();
+        console.log('🔑 Device ID:', DEVICE_ID);
+        document.getElementById('current-device-id').textContent = DEVICE_ID;
+        
+        function changeSyncId() {
+            const newId = prompt("Enter a Sync Name (e.g. 'my-flashcards').\n\nIMPORTANT: Use the EXACT same name on your other devices to sync data.", DEVICE_ID);
+            if (newId && newId.trim() !== "") {
+                const cleanId = newId.trim();
+                localStorage.setItem('monoFlashDeviceId', cleanId);
+                alert("Device Linked! The page will reload to sync data.");
+                location.reload();
+            }
+        }
+
+        let syncInProgress = false;
+        const syncDot = document.getElementById('sync-dot');
+        const syncText = document.getElementById('sync-text');
+        
+        // ==================== DATA STRUCTURE ====================
+        // OPTIMIZATION: Separate card content (synced) from SRS progress (local)
+        
+        let cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent')) || {};
+        let srsData = JSON.parse(localStorage.getItem('monoFlashSRSData')) || {};
+        
         let currentSubject = null;
         let currentSub = null;
         let cardIndex = 0;
         let sessionStats = { total: 0, correct: 0 };
-        let shuffledCards = []; // Randomized order of cards
+        let shuffledCards = [];
+        let dueCards = [];
+        
+        // --- CONTAINER & REVIEW MISSED FEATURES ---
+        const CARDS_PER_CONTAINER = 20;
+        let currentContainer = 'all';
+        let reviewMissedMode = false;
+        let missedCardsThisSession = new Set();
 
-        // Fisher-Yates shuffle algorithm
+        // ==================== SRS FUNCTIONS ====================
+        
+        function createDefaultSRS() {
+            return {
+                interval: 0,
+                easiness: 2.5,
+                repetitions: 0,
+                nextReview: Date.now(),
+                lastReviewed: null
+            };
+        }
+
+        function initializeSRS(srsObj) {
+            if (!srsObj || typeof srsObj !== 'object') {
+                return createDefaultSRS();
+            }
+            if (!srsObj.interval) srsObj.interval = 0;
+            if (!srsObj.easiness) srsObj.easiness = 2.5;
+            if (!srsObj.repetitions) srsObj.repetitions = 0;
+            if (!srsObj.nextReview) srsObj.nextReview = Date.now();
+            return srsObj;
+        }
+
+        function updateSRS(srsObj, quality) {
+            const now = Date.now();
+            srsObj.lastReviewed = now;
+            
+            if (quality === 0) {
+                srsObj.repetitions = 0;
+                srsObj.interval = 1;
+            } else {
+                srsObj.repetitions += 1;
+                
+                if (srsObj.repetitions === 1) {
+                    srsObj.interval = 1;
+                } else if (srsObj.repetitions === 2) {
+                    srsObj.interval = 6;
+                } else {
+                    srsObj.interval = Math.round(srsObj.interval * srsObj.easiness);
+                }
+                
+                srsObj.easiness = Math.max(1.3, srsObj.easiness + (0.1 - (1 - quality) * 0.2));
+            }
+            
+            srsObj.nextReview = now + (srsObj.interval * 24 * 60 * 60 * 1000);
+            return srsObj;
+        }
+
+        function isDue(srsObj) {
+            if (!srsObj || !srsObj.nextReview) return true;
+            return Date.now() >= srsObj.nextReview;
+        }
+
+        // ==================== DATA MANAGEMENT ====================
+        
+        function ensureSRSDataExists() {
+            for (let subject in cardContent) {
+                if (!srsData[subject]) srsData[subject] = {};
+                
+                for (let sub in cardContent[subject]) {
+                    if (!srsData[subject][sub]) srsData[subject][sub] = [];
+                    
+                    const cardCount = cardContent[subject][sub].length;
+                    const srsCount = srsData[subject][sub].length;
+                    
+                    if (srsCount < cardCount) {
+                        for (let i = srsCount; i < cardCount; i++) {
+                            srsData[subject][sub].push(createDefaultSRS());
+                        }
+                    }
+                }
+            }
+        }
+
+        function saveData() {
+            ensureSRSDataExists();
+            localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
+            localStorage.setItem('monoFlashSRSData', JSON.stringify(srsData));
+        }
+
+        // ==================== FIREBASE SYNC ====================
+        
+        async function syncToCloud() {
+            if (syncInProgress || !window.firebaseDB) return;
+            
+            try {
+                syncInProgress = true;
+                syncDot.className = 'sync-status-dot';
+                syncText.textContent = "Syncing...";
+                
+                const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+                await window.firebaseSetDoc(docRef, {
+                    cardContent: cardContent,
+                    lastSync: Date.now(),
+                    deviceId: DEVICE_ID
+                });
+                
+                console.log('✅ Synced card content to cloud');
+                syncDot.className = 'sync-status-dot online';
+                syncText.textContent = "Synced ✓";
+                
+                setTimeout(() => {
+                    if (syncText.textContent === "Synced ✓") {
+                        syncText.textContent = "Sync Cards";
+                    }
+                }, 2000);
+            } catch (error) {
+                console.error('❌ Sync error:', error);
+                syncDot.className = 'sync-status-dot error';
+                syncText.textContent = "Sync Failed";
+                
+                if (error.code === 'permission-denied') {
+                    alert("Sync Failed: Permission Denied.\n\nPlease check your Firebase Console > Firestore Database > Rules.");
+                }
+                
+                setTimeout(() => {
+                    syncText.textContent = "Sync Cards";
+                }, 3000);
+            } finally {
+                syncInProgress = false;
+            }
+        }
+        
+        async function loadFromCloud() {
+            if (!window.firebaseDB) {
+                console.log('Firebase not ready, using localStorage');
+                return;
+            }
+            
+            try {
+                const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+                const docSnap = await window.firebaseGetDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    
+                    if (cloudData.cardContent) {
+                        const localTimestamp = JSON.parse(localStorage.getItem('monoFlashCardContent_timestamp') || '0');
+                        const cloudTimestamp = cloudData.lastSync || 0;
+                        
+                        if (cloudTimestamp > localTimestamp) {
+                            cardContent = cloudData.cardContent;
+                            localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
+                            localStorage.setItem('monoFlashCardContent_timestamp', JSON.stringify(cloudTimestamp));
+                            console.log('📥 Loaded newer card content from cloud');
+                        } else {
+                            console.log('📦 Local card content is up to date');
+                        }
+                    }
+                    
+                    ensureSRSDataExists();
+                    saveData();
+                    renderSidebar();
+                    
+                    syncDot.className = 'sync-status-dot online';
+                } else {
+                    console.log('No cloud data found, will sync local data');
+                    syncToCloud();
+                }
+            } catch (error) {
+                console.error('Error loading from cloud:', error);
+                syncDot.className = 'sync-status-dot error';
+            }
+        }
+
+        function manualSync() {
+            syncToCloud();
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        
         function shuffleArray(array) {
-            const shuffled = [...array]; // Create a copy
+            const shuffled = [...array];
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -207,198 +535,288 @@ What is speed? -!- Distance over time'></textarea>
             return shuffled;
         }
 
-        // Utility: create safe DOM ids from arbitrary names
-        function safeId(name){
-            return String(name || '')
-                .trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9_-]+/g, '-');
+        function safeId(name) {
+            return String(name || '').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
         }
 
-        // Validate imported JSON for card arrays: [{q: string, a: string}]
-        function isValidCardArray(arr){
-            if(!Array.isArray(arr)) return false;
+        function isValidCardArray(arr) {
+            if (!Array.isArray(arr)) return false;
             return arr.every(c => c && typeof c === 'object' && typeof c.q === 'string' && typeof c.a === 'string');
         }
 
-        // NEW: Parse text format "Question -!- Answer" into JSON
-        function parseTextFormat(text){
+        function parseTextFormat(text) {
             const lines = text.split('\n').filter(line => line.trim().length > 0);
             const cards = [];
-            
-            for(let line of lines){
-                if(line.includes('-!-')){
+            for (let line of lines) {
+                if (line.includes('-!-')) {
                     const parts = line.split('-!-');
-                    if(parts.length >= 2){
+                    if (parts.length >= 2) {
                         const q = parts[0].trim();
-                        const a = parts.slice(1).join('-!-').trim(); // In case answer contains -!-
-                        if(q && a){
+                        const a = parts.slice(1).join('-!-').trim();
+                        if (q && a) {
                             cards.push({q, a});
                         }
                     }
                 }
             }
-            
             return cards;
         }
 
-        // --- SIDEBAR & NAV LOGIC ---
-        function saveSidebarState(isOpen){
-            try{ localStorage.setItem('monoSidebarOpen', isOpen ? '1' : '0'); }catch(e){}
-        }
-
-        function loadSidebarState(){
-            try{
-                const val = localStorage.getItem('monoSidebarOpen');
-                if(val === '1'){
-                    document.getElementById('sidebar').classList.add('open');
-                    document.getElementById('overlay').classList.add('show');
-                } else {
-                    document.getElementById('sidebar').classList.remove('open');
-                    document.getElementById('overlay').classList.remove('show');
-                }
-            }catch(e){}
-        }
-
-        function toggleSidebar(forceState){
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('overlay');
-            if(typeof forceState === 'boolean'){
-                sb.classList.toggle('open', forceState);
-                ov.classList.toggle('show', forceState);
-                saveSidebarState(forceState);
-                return;
-            }
-            const willOpen = !sb.classList.contains('open');
-            sb.classList.toggle('open');
-            ov.classList.toggle('show');
-            saveSidebarState(willOpen);
-        }
-
+        // ==================== SIDEBAR FUNCTIONS ====================
+        
         function renderSidebar() {
-            const container = document.getElementById('subject-list');
-            container.innerHTML = '';
-
-            Object.keys(appData).forEach(sub => {
-                const subDiv = document.createElement('div');
-                subDiv.className = 'subject-item';
+            const list = document.getElementById('subject-list');
+            list.innerHTML = '';
+            
+            for (let subject in cardContent) {
+                const item = document.createElement('div');
+                item.className = 'subject-item';
                 
                 const title = document.createElement('div');
                 title.className = 'subject-title';
-                title.innerHTML = `${sub} <span>▾</span>`;
-                const safe = safeId(sub);
-                title.onclick = () => {
-                    const el = document.getElementById(`list-${safe}`);
-                    if(el) el.classList.toggle('show');
-                };
-
-                const list = document.createElement('div');
-                list.className = 'sub-subject-list';
-                list.id = `list-${safe}`;
                 
-                // Add "Add Sub-subject" button inside list
+                const titleText = document.createElement('span');
+                titleText.textContent = subject;
+                titleText.onclick = () => toggleSubject(subject);
+                title.appendChild(titleText);
+                
+                const deleteBtn = document.createElement('span');
+                deleteBtn.textContent = '×';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.style.fontSize = '1.5rem';
+                deleteBtn.style.color = '#666';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteSubject(subject);
+                };
+                title.appendChild(deleteBtn);
+                
+                item.appendChild(title);
+                
+                const subList = document.createElement('div');
+                subList.className = 'sub-subject-list';
+                subList.id = 'sub-' + safeId(subject);
+                
+                for (let sub in cardContent[subject]) {
+                    const subItem = document.createElement('div');
+                    subItem.className = 'sub-item';
+                    
+                    const cardCount = cardContent[subject][sub].length;
+                    
+                    const subText = document.createElement('span');
+                    subText.innerHTML = `${sub} <span class="card-count">${cardCount}</span>`;
+                    subText.onclick = () => loadTopic(subject, sub);
+                    subItem.appendChild(subText);
+                    
+                    const subDeleteBtn = document.createElement('span');
+                    subDeleteBtn.textContent = '×';
+                    subDeleteBtn.style.cursor = 'pointer';
+                    subDeleteBtn.style.fontSize = '1.2rem';
+                    subDeleteBtn.style.color = '#666';
+                    subDeleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteSub(subject, sub);
+                    };
+                    subItem.appendChild(subDeleteBtn);
+                    
+                    subList.appendChild(subItem);
+                }
+                
                 const addSubBtn = document.createElement('div');
-                addSubBtn.className = 'sub-item';
-                addSubBtn.innerText = '+ New Topic';
-                addSubBtn.style.fontStyle = 'italic';
-                addSubBtn.onclick = () => addNewSubSubject(sub);
-                list.appendChild(addSubBtn);
+                addSubBtn.className = 'add-btn';
+                addSubBtn.textContent = '+ Add Topic';
+                addSubBtn.style.margin = '5px 0';
+                addSubBtn.onclick = () => addNewSub(subject);
+                subList.appendChild(addSubBtn);
+                
+                item.appendChild(subList);
+                list.appendChild(item);
+            }
+        }
 
-                Object.keys(appData[sub]).forEach(topic => {
-                    const item = document.createElement('div');
-                    item.className = 'sub-item';
-                    item.innerText = topic;
-                    item.onclick = () => loadTopic(sub, topic);
-                    list.appendChild(item);
-                });
+        function toggleSubject(subject) {
+            const subList = document.getElementById('sub-' + safeId(subject));
+            if (subList) {
+                subList.classList.toggle('show');
+                saveSidebarState();
+            }
+        }
 
-                subDiv.appendChild(title);
-                subDiv.appendChild(list);
-                container.appendChild(subDiv);
+        function saveSidebarState() {
+            const openSubjects = [];
+            document.querySelectorAll('.sub-subject-list.show').forEach(el => {
+                const id = el.id.replace('sub-', '');
+                openSubjects.push(id);
             });
+            localStorage.setItem('monoFlashSidebarState', JSON.stringify(openSubjects));
+        }
+
+        function loadSidebarState() {
+            const saved = localStorage.getItem('monoFlashSidebarState');
+            if (saved) {
+                try {
+                    const openSubjects = JSON.parse(saved);
+                    openSubjects.forEach(id => {
+                        const el = document.getElementById('sub-' + id);
+                        if (el) el.classList.add('show');
+                    });
+                } catch (e) {
+                    console.error('Error loading sidebar state:', e);
+                }
+            }
         }
 
         function addNewSubject() {
-            const name = prompt("Enter Subject Name (e.g., Physics):");
-            if (name && !appData[name]) {
-                appData[name] = {};
-                saveData();
-                renderSidebar();
+            const name = prompt("Enter new Subject name:");
+            if (name && name.trim() !== "") {
+                const trimmed = name.trim();
+                if (!cardContent[trimmed]) {
+                    cardContent[trimmed] = {};
+                    saveData();
+                    syncToCloud();
+                    renderSidebar();
+                    loadSidebarState();
+                }
             }
         }
 
-        function addNewSubSubject(subject) {
-            const name = prompt(`Enter Topic for ${subject} (e.g., Motion):`);
-            if (name && !appData[subject][name]) {
-                appData[subject][name] = []; // Empty array for cards
-                saveData();
-                renderSidebar();
+        function addNewSub(subject) {
+            const name = prompt("Enter new Topic name for " + subject + ":");
+            if (name && name.trim() !== "") {
+                const trimmed = name.trim();
+                if (!cardContent[subject][trimmed]) {
+                    cardContent[subject][trimmed] = [];
+                    saveData();
+                    syncToCloud();
+                    renderSidebar();
+                    loadSidebarState();
+                }
             }
         }
 
-        // --- CORE FUNCTIONALITY ---
-        function loadTopic(sub, topic) {
-            currentSubject = sub;
-            currentSub = topic;
+        function deleteSubject(subject) {
+            if (confirm("Delete entire subject '" + subject + "'? This will delete all topics and cards inside it.")) {
+                delete cardContent[subject];
+                delete srsData[subject];
+                if (currentSubject === subject) {
+                    currentSubject = null;
+                    currentSub = null;
+                    document.getElementById('header-title').textContent = 'Select a Subject';
+                    renderCard();
+                }
+                saveData();
+                syncToCloud();
+                renderSidebar();
+                renderDbList();
+            }
+        }
+
+        function deleteSub(subject, sub) {
+            if (confirm("Delete topic '" + sub + "' and all its cards?")) {
+                delete cardContent[subject][sub];
+                if (srsData[subject]) delete srsData[subject][sub];
+                if (currentSubject === subject && currentSub === sub) {
+                    currentSub = null;
+                    document.getElementById('header-title').textContent = subject;
+                    renderCard();
+                }
+                saveData();
+                syncToCloud();
+                renderSidebar();
+                renderDbList();
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('show');
+        }
+
+        // ==================== FLASHCARD FUNCTIONS ====================
+        
+        function loadTopic(subject, sub) {
+            currentSubject = subject;
+            currentSub = sub;
+            currentContainer = 'all';
+            reviewMissedMode = false;
+            missedCardsThisSession.clear();
             cardIndex = 0;
             sessionStats = { total: 0, correct: 0 };
             
-            // Shuffle cards when loading topic
-            if (appData[sub] && appData[sub][topic] && Array.isArray(appData[sub][topic])) {
-                shuffledCards = shuffleArray(appData[sub][topic]);
+            document.getElementById('header-title').textContent = subject + " > " + sub;
+            
+            ensureSRSDataExists();
+            
+            if (cardContent[subject] && cardContent[subject][sub]) {
+                const cards = cardContent[subject][sub];
+                const srs = srsData[subject][sub];
+                
+                const cardsWithSRS = cards.map((card, i) => ({
+                    q: card.q,
+                    a: card.a,
+                    srs: srs[i],
+                    _index: i
+                }));
+                
+                dueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                shuffledCards = shuffleArray(dueCards.length > 0 ? dueCards : cardsWithSRS);
             } else {
                 shuffledCards = [];
             }
             
-            document.getElementById('header-title').innerText = `${sub} / ${topic}`;
-            toggleSidebar(); // Close sidebar
             renderCard();
-            renderDbList();
             updateStats();
-        }
-
-        function switchTab(tabId, navEl) {
-            document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            renderDbList();
+            renderContainerSelector();
             
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            navEl.classList.add('active');
+            document.querySelectorAll('.sub-item').forEach(el => el.classList.remove('active'));
+            event.target.closest('.sub-item')?.classList.add('active');
+            
+            toggleSidebar();
         }
 
-        // --- FLASHCARD LOGIC ---
         function renderCard() {
-            const cardEl = document.getElementById('active-card');
-            const frontEl = document.getElementById('card-front');
-            const backEl = document.getElementById('card-back');
+            const front = document.getElementById('card-front');
+            const back = document.getElementById('card-back');
+            const card = document.getElementById('active-card');
             
-            cardEl.classList.remove('flipped'); // Reset flip
-            if (!currentSubject || !currentSub || shuffledCards.length === 0) {
-                frontEl.innerText = "No cards here.";
-                backEl.innerText = "Go to DATA tab to add cards.";
+            card.classList.remove('flipped');
+            
+            if (shuffledCards.length === 0 || cardIndex >= shuffledCards.length) {
+                front.textContent = currentSubject && currentSub ? "No cards available" : "Select a sub-subject";
+                back.textContent = currentSubject && currentSub ? "Add some cards!" : "...to start";
                 return;
             }
-
-            // Loop if we reach end
-            if (cardIndex >= shuffledCards.length) cardIndex = 0;
-
-            const card = shuffledCards[cardIndex];
-            frontEl.innerText = card.q;
-            backEl.innerText = card.a;
+            
+            const current = shuffledCards[cardIndex];
+            front.textContent = current.q;
+            back.textContent = current.a;
         }
 
         function flipCard() {
+            if (shuffledCards.length === 0 || cardIndex >= shuffledCards.length) return;
             document.getElementById('active-card').classList.toggle('flipped');
         }
 
         function nextCard(isCorrect) {
-            if (!currentSubject) return;
+            if (!currentSubject || !currentSub || shuffledCards.length === 0 || cardIndex >= shuffledCards.length) return;
             
-            // Update Stats
+            const current = shuffledCards[cardIndex];
+            const originalIndex = current._index;
+            
+            updateSRS(current.srs, isCorrect ? 1 : 0);
+            
+            if (!isCorrect) {
+                missedCardsThisSession.add(originalIndex);
+            }
+            
+            saveData();
+            
             sessionStats.total++;
             if (isCorrect) sessionStats.correct++;
             updateStats();
-
-            // Next card
+            renderContainerSelector();
+            
             cardIndex++;
             renderCard();
         }
@@ -407,9 +825,26 @@ What is speed? -!- Distance over time'></textarea>
             document.getElementById('stat-total').innerText = sessionStats.total;
             const percentage = sessionStats.total === 0 ? 0 : Math.round((sessionStats.correct / sessionStats.total) * 100);
             document.getElementById('stat-score').innerText = percentage + "%";
+            
+            if (currentSubject && currentSub && cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+                const cards = cardContent[currentSubject][currentSub];
+                const srs = srsData[currentSubject][currentSub];
+                
+                const dueCount = srs.filter(s => isDue(s)).length;
+                const masteredCount = srs.filter(s => s.interval >= 7).length;
+                
+                document.getElementById('stat-due').innerText = dueCount;
+                document.getElementById('stat-mastered').innerText = masteredCount;
+                renderContainerStats(cards);
+            } else {
+                document.getElementById('stat-due').innerText = '-';
+                document.getElementById('stat-mastered').innerText = '-';
+                document.getElementById('container-stats').innerHTML = '';
+            }
         }
 
-        // --- DATABASE LOGIC ---
+        // ==================== DATABASE FUNCTIONS ====================
+        
         function importJson() {
             if (!currentSubject || !currentSub) {
                 alert("Please select a Subject and Topic from the sidebar first.");
@@ -417,22 +852,19 @@ What is speed? -!- Distance over time'></textarea>
             }
 
             const input = document.getElementById('json-input').value.trim();
-            if(!input){
+            if (!input) {
                 alert("Please enter some data first.");
                 return;
             }
             
             let newCards = [];
-            
-            // Try parsing as text format first (Question -!- Answer)
-            if(input.includes('-!-')){
+            if (input.includes('-!-')) {
                 newCards = parseTextFormat(input);
-                if(newCards.length === 0){
+                if (newCards.length === 0) {
                     alert('No valid cards found. Make sure to use format: Question -!- Answer');
                     return;
                 }
             } else {
-                // Try parsing as JSON
                 try {
                     newCards = JSON.parse(input);
                     if (!isValidCardArray(newCards)) {
@@ -445,16 +877,15 @@ What is speed? -!- Distance over time'></textarea>
                 }
             }
 
-            // Ensure target array exists
-            if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
+            if (!Array.isArray(cardContent[currentSubject][currentSub])) {
+                cardContent[currentSubject][currentSub] = [];
+            }
 
-            // Check for duplicates
-            const existingCards = appData[currentSubject][currentSub];
+            const existingCards = cardContent[currentSubject][currentSub];
             let addedCount = 0;
             let duplicateCount = 0;
             
             newCards.forEach(newCard => {
-                // Check if card already exists (same question)
                 const isDuplicate = existingCards.some(existing => 
                     existing.q.trim().toLowerCase() === newCard.q.trim().toLowerCase()
                 );
@@ -467,7 +898,9 @@ What is speed? -!- Distance over time'></textarea>
                 }
             });
 
+            ensureSRSDataExists();
             saveData();
+            syncToCloud();
             
             let message = `Added ${addedCount} card${addedCount !== 1 ? 's' : ''}!`;
             if (duplicateCount > 0) {
@@ -475,39 +908,51 @@ What is speed? -!- Distance over time'></textarea>
             }
             alert(message);
             
-            // Reshuffle cards after import
-            if (appData[currentSubject] && appData[currentSubject][currentSub]) {
-                shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
+            if (cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+                const cards = cardContent[currentSubject][currentSub];
+                const srs = srsData[currentSubject][currentSub];
+                
+                const cardsWithSRS = cards.map((card, i) => ({
+                    q: card.q,
+                    a: card.a,
+                    srs: srs[i],
+                    _index: i
+                }));
+                
+                dueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                shuffledCards = shuffleArray(dueCards.length > 0 ? dueCards : cardsWithSRS);
             }
             
-            document.getElementById('json-input').value = ''; // Clear
+            document.getElementById('json-input').value = '';
             renderDbList();
-            renderCard(); // Refresh current view
+            renderCard();
+            renderSidebar();
         }
 
-        // Import JSON from a selected file (local file input)
-        function importJsonFile(e){
+        function importJsonFile(e) {
             if (!currentSubject || !currentSub) {
                 alert("Please select a Subject and Topic from the sidebar first.");
-                // clear file input if any
-                if(e && e.target) e.target.value = '';
+                if (e && e.target) e.target.value = '';
                 return;
             }
+            
             const file = (e && e.target && e.target.files && e.target.files[0]) || null;
-            if(!file){ return; }
+            if (!file) return;
+            
             const reader = new FileReader();
-            reader.onload = function(ev){
-                try{
+            reader.onload = function(ev) {
+                try {
                     const parsed = JSON.parse(String(ev.target.result));
-                    if(!isValidCardArray(parsed)){
+                    if (!isValidCardArray(parsed)) {
                         alert('Invalid JSON shape in file. Provide an array of {q:string,a:string}.');
                         return;
                     }
 
-                    if(!Array.isArray(appData[currentSubject][currentSub])) appData[currentSubject][currentSub] = [];
+                    if (!Array.isArray(cardContent[currentSubject][currentSub])) {
+                        cardContent[currentSubject][currentSub] = [];
+                    }
                     
-                    // Check for duplicates
-                    const existingCards = appData[currentSubject][currentSub];
+                    const existingCards = cardContent[currentSubject][currentSub];
                     let addedCount = 0;
                     let duplicateCount = 0;
                     
@@ -524,7 +969,9 @@ What is speed? -!- Distance over time'></textarea>
                         }
                     });
                     
+                    ensureSRSDataExists();
                     saveData();
+                    syncToCloud();
                     
                     let message = `Imported ${addedCount} card${addedCount !== 1 ? 's' : ''} from file.`;
                     if (duplicateCount > 0) {
@@ -532,30 +979,40 @@ What is speed? -!- Distance over time'></textarea>
                     }
                     alert(message);
                     
-                    // Reshuffle cards after import
-                    if (appData[currentSubject] && appData[currentSubject][currentSub]) {
-                        shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
+                    if (cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+                        const cards = cardContent[currentSubject][currentSub];
+                        const srs = srsData[currentSubject][currentSub];
+                        
+                        const cardsWithSRS = cards.map((card, i) => ({
+                            q: card.q,
+                            a: card.a,
+                            srs: srs[i],
+                            _index: i
+                        }));
+                        
+                        dueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                        shuffledCards = shuffleArray(dueCards.length > 0 ? dueCards : cardsWithSRS);
                     }
                     
                     renderDbList();
                     renderCard();
-                }catch(err){
+                    renderSidebar();
+                } catch (err) {
                     alert('Unable to parse JSON file.');
                 } finally {
-                    // reset file input so same file can be re-selected later
-                    if(e && e.target) e.target.value = '';
+                    if (e && e.target) e.target.value = '';
                 }
             };
             reader.readAsText(file);
         }
 
-        // Export current topic cards as JSON file
-        function exportJson(){
-            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub])){
+        function exportJson() {
+            if (!currentSubject || !currentSub || !cardContent[currentSubject] || !Array.isArray(cardContent[currentSubject][currentSub])) {
                 alert('Select a Subject and Topic first to export.');
                 return;
             }
-            const data = appData[currentSubject][currentSub];
+            
+            const data = cardContent[currentSubject][currentSub];
             const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -568,133 +1025,289 @@ What is speed? -!- Distance over time'></textarea>
             URL.revokeObjectURL(url);
         }
 
-        // Navigate to previous card
-        function prevCard(){
-            if (!currentSubject || !currentSub) return;
-            cardIndex = Math.max(0, cardIndex - 1);
-            renderCard();
-        }
-
-        // Keyboard accessibility: flip with Space/Enter, navigate with arrows
-        document.addEventListener('keydown', (e) => {
-            // Do nothing if focus is in a text input/textarea
-            const tag = document.activeElement && document.activeElement.tagName;
-            if(tag === 'INPUT' || tag === 'TEXTAREA') return;
-
-            const activeTab = document.querySelector('.tab-view.active');
-            if(activeTab && activeTab.id === 'tab-flashcard'){
-                if(e.code === 'Space' || e.code === 'Enter'){
-                    e.preventDefault();
-                    flipCard();
-                } else if(e.code === 'ArrowRight'){
-                    e.preventDefault();
-                    nextCard(false);
-                } else if(e.code === 'ArrowLeft'){
-                    e.preventDefault();
-                    prevCard();
-                }
-            }
-        });
-
-        // Add some ARIA and keyboard focusability
-        document.querySelectorAll('.menu-btn').forEach(el => {
-            el.setAttribute('role','button');
-            el.setAttribute('tabindex','0');
-            el.setAttribute('aria-label','Toggle menu');
-            el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); toggleSidebar(); } });
-        });
-
-        // Make card keyboard-focusable
-        const initCardFocus = () => {
-            const card = document.getElementById('active-card');
-            if(card){
-                card.setAttribute('role','button');
-                card.setAttribute('tabindex','0');
-                card.setAttribute('aria-label','Flashcard - press space or enter to flip');
-                card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); flipCard(); } });
-            }
-        };
-
-        // when loading topic, focus the card for keyboard users
-        const origLoadTopic = loadTopic;
-        loadTopic = function(sub, topic){
-            origLoadTopic(sub, topic);
-            setTimeout(()=>{
-                initCardFocus();
-                const card = document.getElementById('active-card');
-                if(card) card.focus();
-            }, 50);
-        };
-
-        // initialize focusability on startup
-        initCardFocus();
-
         function renderDbList() {
             const list = document.getElementById('db-list');
             list.innerHTML = '';
             
-            if (!currentSubject || !currentSub || !appData[currentSubject] || !Array.isArray(appData[currentSubject][currentSub])) return;
+            if (!currentSubject || !currentSub || !cardContent[currentSubject] || !Array.isArray(cardContent[currentSubject][currentSub])) return;
 
-            const cards = appData[currentSubject][currentSub];
+            const cards = cardContent[currentSubject][currentSub];
             cards.forEach((c, idx) => {
                 const item = document.createElement('div');
                 item.className = 'db-item';
                 item.innerHTML = `
                     <div>
-                        <div class="db-key">Q: ${c.q}</div>
-                        <div style="color:#666">A: ${c.a}</div>
+                        <div class="db-key">${c.q}</div>
+                        <div style="color:#888">${c.a}</div>
                     </div>
-                    <button onclick="deleteCard(${idx})" style="background:none; border:none; color:red;">✕</button>
+                    <button class="btn" onclick="deleteCard(${idx})" style="padding: 5px 10px; font-size: 0.8rem;">Delete</button>
                 `;
                 list.appendChild(item);
             });
         }
 
         function deleteCard(index) {
-            if(confirm('Delete this card?')) {
-                appData[currentSubject][currentSub].splice(index, 1);
+            if (!currentSubject || !currentSub) return;
+            
+            if (confirm("Delete this card?")) {
+                cardContent[currentSubject][currentSub].splice(index, 1);
+                if (srsData[currentSubject] && srsData[currentSubject][currentSub]) {
+                    srsData[currentSubject][currentSub].splice(index, 1);
+                }
+                
                 saveData();
-                
-                // Reshuffle after deletion
-                shuffledCards = shuffleArray(appData[currentSubject][currentSub]);
-                if (cardIndex >= shuffledCards.length) cardIndex = 0;
-                
+                syncToCloud();
                 renderDbList();
+                renderSidebar();
+                
+                if (cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+                    const cards = cardContent[currentSubject][currentSub];
+                    const srs = srsData[currentSubject][currentSub];
+                    
+                    const cardsWithSRS = cards.map((card, i) => ({
+                        q: card.q,
+                        a: card.a,
+                        srs: srs[i],
+                        _index: i
+                    }));
+                    
+                    dueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                    shuffledCards = shuffleArray(dueCards.length > 0 ? dueCards : cardsWithSRS);
+                }
+                
                 renderCard();
             }
         }
 
         function clearAllCards() {
             if (!currentSubject || !currentSub) {
-                alert('Please select a Subject and Topic first.');
+                alert("Please select a subject and topic first.");
                 return;
             }
             
-            const cardCount = appData[currentSubject][currentSub].length;
-            if (cardCount === 0) {
-                alert('No cards to clear.');
-                return;
-            }
-            
-            if(confirm(`Are you sure you want to delete all ${cardCount} cards from "${currentSub}"?\n\nThis action cannot be undone.`)) {
-                appData[currentSubject][currentSub] = [];
+            if (confirm("Clear all cards in " + currentSubject + " > " + currentSub + "?")) {
+                cardContent[currentSubject][currentSub] = [];
+                if (srsData[currentSubject] && srsData[currentSubject][currentSub]) {
+                    srsData[currentSubject][currentSub] = [];
+                }
+                
                 saveData();
-                shuffledCards = [];
-                cardIndex = 0;
+                syncToCloud();
                 renderDbList();
+                renderSidebar();
+                shuffledCards = [];
                 renderCard();
-                alert('All cards cleared.');
             }
         }
 
-        function saveData() {
-            localStorage.setItem('monoFlashData', JSON.stringify(appData));
+        // ==================== CONTAINER FUNCTIONS ====================
+        
+        function getContainerForIndex(index) {
+            return Math.floor(index / CARDS_PER_CONTAINER);
+        }
+        
+        function getContainerCards(containerNum) {
+            if (!currentSubject || !currentSub || !cardContent[currentSubject] || !cardContent[currentSubject][currentSub]) {
+                return [];
+            }
+            const allCards = cardContent[currentSubject][currentSub];
+            const startIdx = containerNum * CARDS_PER_CONTAINER;
+            const endIdx = Math.min(startIdx + CARDS_PER_CONTAINER, allCards.length);
+            return allCards.slice(startIdx, endIdx);
+        }
+        
+        function renderContainerSelector() {
+            const container = document.getElementById('container-selector');
+            if (!currentSubject || !currentSub || !cardContent[currentSubject] || !cardContent[currentSubject][currentSub]) {
+                container.style.display = 'none';
+                return;
+            }
+            const allCards = cardContent[currentSubject][currentSub];
+            const numContainers = Math.ceil(allCards.length / CARDS_PER_CONTAINER);
+            
+            if (allCards.length <= CARDS_PER_CONTAINER) {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'flex';
+                container.innerHTML = '';
+                
+                const missedBtn = document.createElement('button');
+                missedBtn.className = 'container-btn' + (reviewMissedMode ? ' active' : '');
+                missedBtn.textContent = `Missed (${missedCardsThisSession.size})`;
+                missedBtn.onclick = () => toggleReviewMissed();
+                missedBtn.id = 'review-missed-btn';
+                container.appendChild(missedBtn);
+                
+                const allBtn = document.createElement('button');
+                allBtn.className = 'container-btn' + (currentContainer === 'all' && !reviewMissedMode ? ' active' : '');
+                allBtn.textContent = 'All';
+                allBtn.onclick = () => selectContainer('all');
+                container.appendChild(allBtn);
+                
+                for (let i = 0; i < numContainers; i++) {
+                    const btn = document.createElement('button');
+                    const startIdx = i * CARDS_PER_CONTAINER;
+                    const endIdx = Math.min(startIdx + CARDS_PER_CONTAINER, allCards.length);
+                    const count = endIdx - startIdx;
+                    btn.className = 'container-btn' + (currentContainer === i && !reviewMissedMode ? ' active' : '');
+                    btn.textContent = `C${i + 1} (${count})`;
+                    btn.onclick = () => selectContainer(i);
+                    container.appendChild(btn);
+                }
+                
+                const info = document.createElement('div');
+                info.className = 'container-info';
+                info.textContent = `${allCards.length} total cards • ${CARDS_PER_CONTAINER} cards per container`;
+                container.appendChild(info);
+            }
+        }
+        
+        function selectContainer(containerIdentifier) {
+            currentContainer = containerIdentifier;
+            reviewMissedMode = false;
+            cardIndex = 0;
+            
+            if (!currentSubject || !currentSub || !cardContent[currentSubject] || !cardContent[currentSubject][currentSub]) return;
+            
+            const cards = cardContent[currentSubject][currentSub];
+            const srs = srsData[currentSubject][currentSub];
+            
+            if (containerIdentifier === 'all') {
+                const cardsWithSRS = cards.map((card, i) => ({
+                    q: card.q,
+                    a: card.a,
+                    srs: srs[i],
+                    _index: i
+                }));
+                
+                dueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                shuffledCards = shuffleArray(dueCards.length > 0 ? dueCards : cardsWithSRS);
+            } else {
+                const containerCards = getContainerCards(containerIdentifier);
+                const startIdx = containerIdentifier * CARDS_PER_CONTAINER;
+                
+                const cardsWithSRS = containerCards.map((card, i) => ({
+                    q: card.q,
+                    a: card.a,
+                    srs: srs[startIdx + i],
+                    _index: startIdx + i
+                }));
+                
+                const containerDueCards = cardsWithSRS.filter(card => isDue(card.srs));
+                shuffledCards = shuffleArray(containerDueCards.length > 0 ? containerDueCards : cardsWithSRS);
+            }
+            
+            renderCard();
+            renderContainerSelector();
+        }
+        
+        function toggleReviewMissed() {
+            if (missedCardsThisSession.size === 0) {
+                alert('No missed cards in this session yet!');
+                return;
+            }
+            
+            reviewMissedMode = !reviewMissedMode;
+            cardIndex = 0;
+            
+            if (reviewMissedMode) {
+                const cards = cardContent[currentSubject][currentSub];
+                const srs = srsData[currentSubject][currentSub];
+                
+                const missedCards = Array.from(missedCardsThisSession)
+                    .map(idx => ({
+                        q: cards[idx].q,
+                        a: cards[idx].a,
+                        srs: srs[idx],
+                        _index: idx
+                    }))
+                    .filter(card => card.q);
+                
+                shuffledCards = shuffleArray(missedCards);
+                currentContainer = 'all';
+            } else {
+                selectContainer(currentContainer);
+            }
+            
+            renderCard();
+            renderContainerSelector();
+        }
+        
+        function renderContainerStats(allCards) {
+            const statsContainer = document.getElementById('container-stats');
+            const numContainers = Math.ceil(allCards.length / CARDS_PER_CONTAINER);
+            
+            if (numContainers <= 1) {
+                statsContainer.innerHTML = '';
+                return;
+            }
+            
+            statsContainer.innerHTML = '<h3 style="margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Container Breakdown</h3>';
+            
+            for (let i = 0; i < numContainers; i++) {
+                const startIdx = i * CARDS_PER_CONTAINER;
+                const endIdx = Math.min(startIdx + CARDS_PER_CONTAINER, allCards.length);
+                const containerSRS = srsData[currentSubject][currentSub].slice(startIdx, endIdx);
+                
+                const dueCount = containerSRS.filter(s => isDue(s)).length;
+                const masteredCount = containerSRS.filter(s => s.interval >= 7).length;
+                const totalCount = endIdx - startIdx;
+                
+                const statBox = document.createElement('div');
+                statBox.className = 'container-stat';
+                statBox.innerHTML = `
+                    <div class="container-stat-header">Container ${i + 1} (${totalCount} cards)</div>
+                    <div class="container-stat-detail">
+                        ${masteredCount} mastered • ${dueCount} due today
+                    </div>
+                `;
+                statsContainer.appendChild(statBox);
+            }
         }
 
-        // --- INIT ---
+        // ==================== TAB SWITCHING ====================
+        
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            element.classList.add('active');
+            
+            if (tabName === 'performance') {
+                updateStats();
+            }
+        }
+
+        // ==================== KEYBOARD SHORTCUTS ====================
+        
+        document.addEventListener('keydown', (e) => {
+            const tag = document.activeElement && document.activeElement.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+            const activeTab = document.querySelector('.tab-view.active');
+            if (activeTab && activeTab.id === 'tab-flashcard') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    flipCard();
+                } else if (e.code === 'ArrowRight' || e.code === 'KeyJ') {
+                    e.preventDefault();
+                    nextCard(true);
+                } else if (e.code === 'ArrowLeft' || e.code === 'KeyF') {
+                    e.preventDefault();
+                    nextCard(false);
+                }
+            }
+        });
+
+        // ==================== INITIALIZATION ====================
+        
         renderSidebar();
-        // restore sidebar open/closed state
         loadSidebarState();
+        
+        setTimeout(() => {
+            loadFromCloud();
+        }, 1000);
 
     </script>
 </body>
