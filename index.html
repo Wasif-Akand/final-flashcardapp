@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>MonoFlash</title>
     
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyAXul0bzX2-X9qj3t51u6EjhZFFE7mi1ac",
@@ -22,185 +24,1088 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
+        // Enable offline persistence
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+            } else if (err.code === 'unimplemented') {
+                console.warn('The current browser does not support offline persistence');
+            }
+        });
+        
         window.firebaseDB = db;
         window.firebaseDoc = doc;
         window.firebaseSetDoc = setDoc;
         window.firebaseGetDoc = getDoc;
+        window.firebaseReady = true;
     </script>
     
     <style>
-        /* --- CORE VARIABLES & RESET --- */
+        /* --- GOTHIC THEME VARIABLES --- */
         :root {
             --bg: #000000;
-            --surface: #111111;
-            --border: #333333;
+            --surface: #0a0a0a;
+            --surface-elevated: #121212;
+            --border: #1a1a1a;
+            --border-bright: #333333;
             --text: #ffffff;
-            --text-dim: #888888;
+            --text-dim: #666666;
+            --text-dimmer: #444444;
             --accent: #ffffff;
-            --success: #4caf50;
-            --error: #f44336;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            
+            /* Gothic shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.8);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.95);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 1);
+            
+            /* Transitions */
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
-            margin: 0; padding: 0;
-            background: var(--bg); color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            height: 100vh; display: flex; overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Gothic texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.01) 2px,
+                    rgba(255, 255, 255, 0.01) 4px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 9999;
         }
 
         /* --- SIDEBAR (DRAWER) --- */
         #sidebar {
-            width: 280px; background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-            position: absolute; left: -280px; top: 0; bottom: 0;
-            transition: left 0.3s ease; z-index: 1000;
-        }
-        #sidebar.open { left: 0; }
-        
-        .sidebar-header { 
-            padding: 20px; 
-            border-bottom: 1px solid var(--border); 
-            font-weight: bold;
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--border-bright);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            position: fixed;
+            left: -280px;
+            top: 0;
+            bottom: 0;
+            transition: left var(--transition-normal), box-shadow var(--transition-normal);
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
         }
-        .sidebar-header-title { font-size: 1.1rem; }
-        .sidebar-subtitle { 
-            font-size: 0.7rem; 
-            color: var(--text-dim); 
-            font-weight: normal;
-        }
-        .sidebar-content { flex: 1; overflow-y: auto; padding: 10px; }
         
-        .subject-item { margin-bottom: 10px; }
-        .subject-title { font-weight: bold; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .sub-subject-list { margin-left: 15px; border-left: 1px solid var(--border); display: none; }
-        .sub-subject-list.show { display: block; }
-        .sub-item { padding: 10px; color: var(--text-dim); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .sub-item:hover, .sub-item.active { color: var(--text); background: #222; }
-        .card-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 8px; }
-
-        .sync-btn-container { padding: 10px; border-top: 1px solid var(--border); background: #0a0a0a; }
-        .sync-btn {
-            width: 100%; padding: 10px; background: #222; color: white; border: 1px solid var(--border);
-            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-bottom: 6px;
+        #sidebar.open {
+            left: 0;
         }
-        .sync-btn:hover { background: #2a2a2a; }
-        .sync-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
-        .sync-status-dot.online { background: var(--success); box-shadow: 0 0 5px var(--success); animation: pulse 2s infinite; }
-        .sync-status-dot.error { background: var(--error); }
+        
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border-bright);
+            background: linear-gradient(180deg, var(--surface-elevated) 0%, var(--surface) 100%);
+        }
+        
+        .sidebar-header-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .sidebar-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            line-height: 1.4;
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 12px 8px;
+        }
+        
+        .sidebar-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: var(--border-bright);
+            border-radius: 2px;
+        }
+        
+        .subject-item {
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--surface-elevated);
+            transition: all var(--transition-fast);
+        }
+        
+        .subject-item:hover {
+            border-color: var(--border-bright);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .subject-title {
+            font-weight: 700;
+            padding: 14px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all var(--transition-fast);
+            user-select: none;
+        }
+        
+        .subject-title:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .subject-title:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .subject-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .chevron {
+            font-size: 0.7rem;
+            transition: transform var(--transition-normal);
+            color: var(--text-dim);
+        }
+        
+        .subject-item.expanded .chevron {
+            transform: rotate(180deg);
+        }
+        
+        .delete-icon {
+            font-size: 1.2rem;
+            color: var(--text-dimmer);
+            transition: color var(--transition-fast);
+            padding: 4px;
+            cursor: pointer;
+        }
+        
+        .delete-icon:hover {
+            color: var(--error);
+        }
+        
+        .sub-subject-list {
+            border-left: 2px solid var(--border-bright);
+            margin-left: 12px;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .sub-subject-list.show {
+            display: block;
+            animation: slideDown var(--transition-normal);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+        
+        .sub-item {
+            padding: 12px 16px;
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            transition: all var(--transition-fast);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            position: relative;
+        }
+        
+        .sub-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sub-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--accent);
+            transform: scaleY(0);
+            transition: transform var(--transition-fast);
+        }
+        
+        .sub-item:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            padding-left: 20px;
+        }
+        
+        .sub-item:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .sub-item.active {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+            padding-left: 20px;
+        }
+        
+        .sub-item.active::before {
+            transform: scaleY(1);
+        }
+        
+        .card-count {
+            font-size: 0.7rem;
+            color: var(--text-dimmer);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .sync-btn-container {
+            padding: 12px;
+            border-top: 1px solid var(--border-bright);
+            background: var(--surface-elevated);
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+        }
+        
+        .sync-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--surface);
+            color: white;
+            border: 1px solid var(--border-bright);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all var(--transition-fast);
+            text-transform: uppercase;
+        }
+        
+        .sync-btn:hover {
+            background: var(--surface-elevated);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        
+        .sync-btn:active {
+            transform: translateY(0);
+        }
+        
+        .sync-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            transition: all var(--transition-fast);
+        }
+        
+        .sync-status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success), 0 0 16px rgba(46, 204, 113, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        .sync-status-dot.offline {
+            background: var(--warning);
+            box-shadow: 0 0 8px var(--warning);
+        }
+        
+        .sync-status-dot.error {
+            background: var(--error);
+            box-shadow: 0 0 8px var(--error);
+        }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+        
+        .device-id-display {
+            font-size: 0.65rem;
+            color: var(--text-dimmer);
+            margin-top: 8px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        
+        .sync-help-text {
+            font-size: 0.65rem;
+            color: var(--text-dimmer);
+            text-align: center;
+            margin-top: 6px;
+            line-height: 1.3;
         }
 
-        .add-btn { padding: 10px; border: 1px dashed var(--border); text-align: center; margin-top: 10px; cursor: pointer; color: var(--text-dim); }
+        .add-btn {
+            padding: 12px;
+            border: 1px dashed var(--border-bright);
+            text-align: center;
+            margin: 8px 8px 12px 8px;
+            cursor: pointer;
+            color: var(--text-dim);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all var(--transition-fast);
+            text-transform: uppercase;
+        }
+        
+        .add-btn:hover {
+            color: var(--text);
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .add-btn:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
 
         /* --- MAIN CONTENT --- */
-        #main { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; transition: opacity 0.3s; }
-        
-        /* Header */
-        header { 
-            padding: 15px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 15px; 
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            width: 100%;
+            transition: opacity var(--transition-normal);
         }
-        .menu-btn { font-size: 1.5rem; cursor: pointer; }
-
-        /* Content Area */
-        #content-area { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
         
-        /* --- TABS (Flashcard / Perf / DB) --- */
-        .tab-view { display: none; height: 100%; }
-        .tab-view.active { display: flex; flex-direction: column; }
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-bright);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--surface);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .menu-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+            transition: all var(--transition-fast);
+            padding: 8px;
+            margin: -8px;
+            user-select: none;
+        }
+        
+        .menu-btn:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+        
+        #header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        /* FLASHCARD STYLES */
-        .flashcard-container { flex: 1; display: flex; justify-content: center; align-items: center; perspective: 1400px; }
+        #content-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            position: relative;
+        }
+        
+        #content-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #content-area::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+        
+        #content-area::-webkit-scrollbar-thumb {
+            background: var(--border-bright);
+            border-radius: 3px;
+        }
+        
+        /* --- TABS --- */
+        .tab-view {
+            display: none;
+            height: 100%;
+            animation: fadeIn var(--transition-normal);
+        }
+        
+        .tab-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* --- FLASHCARD STYLES --- */
+        .flashcard-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1600px;
+            padding: 20px 0;
+        }
+        
         .card {
-            width: 100%; max-width: 420px; height: 320px;
-            position: relative; transform-style: preserve-3d; transition: transform 0.6s, box-shadow 0.2s;
-            cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 380px;
+            height: 280px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform var(--transition-slow), box-shadow var(--transition-normal);
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
         }
-        .card.flipped { transform: rotateY(180deg); box-shadow: 0 18px 40px rgba(0,0,0,0.6); }
+        
+        .card:hover {
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
         .card-face {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute;
+            width: 100%;
+            height: 100%;
             backface-visibility: hidden;
-            display: flex; justify-content: center; align-items: center; text-align: center;
-            border: 2px solid var(--border); border-radius: 15px; background: var(--surface);
-            padding: 20px; font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 2px solid var(--border-bright);
+            border-radius: 16px;
+            background: var(--surface-elevated);
+            padding: 32px 24px;
+            font-size: 1.3rem;
+            font-weight: 500;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
         }
-        .card-back { transform: rotateY(180deg); background: #000; border-color: #fff; }
+        
+        .card-face::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .card-face::-webkit-scrollbar-thumb {
+            background: var(--border-bright);
+            border-radius: 2px;
+        }
+        
+        .card-back {
+            transform: rotateY(180deg);
+            background: #050505;
+            border-color: var(--accent);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 24px rgba(255, 255, 255, 0.1);
+        }
 
-        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        .btn { padding: 12px 24px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: white; cursor: pointer; transition: transform 0.12s, filter 0.12s; }
-        .btn:hover { transform: translateY(-2px); background: #1a1a1a; }
-        .btn:active { transform: translateY(0); }
-        .btn-primary { background: white; color: black; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
-        .btn-primary:hover { filter: brightness(0.96); }
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+            padding: 0 20px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: 1px solid var(--border-bright);
+            background: var(--surface);
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: var(--shadow-sm);
+            user-select: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            background: var(--surface-elevated);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            color: black;
+            border: none;
+            box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f5f5f5 0%, #bbbbbb 100%);
+            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
 
-        /* Visible focus ring for keyboard users */
-        :focus-visible { outline: 3px solid #4D90FE; outline-offset: 3px; border-radius: 8px; }
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+        }
 
-        /* DATABASE STYLES */
-        textarea { width: 100%; height: 100px; background: #070707; color: #fff; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; border-radius: 6px; font-family: inherit; }
-        .db-item { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-        .db-key { font-weight: bold; }
+        /* --- DATABASE STYLES --- */
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            background: var(--surface-elevated);
+            color: var(--text);
+            border: 1px solid var(--border-bright);
+            padding: 14px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            transition: all var(--transition-fast);
+            line-height: 1.6;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+        
+        textarea::placeholder {
+            color: var(--text-dimmer);
+        }
+        
+        .db-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-bright);
+        }
+        
+        .db-subtitle {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .db-button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .db-button-group .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            font-size: 0.8rem;
+        }
+        
+        .db-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            margin-top: 32px;
+        }
+        
+        .db-list-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .db-item {
+            padding: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface-elevated);
+            margin-bottom: 8px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all var(--transition-fast);
+        }
+        
+        .db-item:hover {
+            border-color: var(--border-bright);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .db-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .db-key {
+            font-weight: 700;
+            margin-bottom: 6px;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+        
+        .db-value {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
 
-        /* PERFORMANCE STYLES */
-        .stat-box { border: 1px solid var(--border); padding: 20px; margin-bottom: 10px; border-radius: 8px; text-align: center; }
-        .stat-num { font-size: 2rem; font-weight: bold; }
-        .container-stat { border: 1px solid var(--border); padding: 15px; margin-bottom: 8px; border-radius: 6px; }
-        .container-stat-header { font-weight: bold; margin-bottom: 8px; }
-        .container-stat-detail { color: var(--text-dim); font-size: 0.9rem; }
+        /* --- PERFORMANCE STYLES --- */
+        .stat-box {
+            border: 1px solid var(--border-bright);
+            padding: 24px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            text-align: center;
+            background: var(--surface-elevated);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
+        }
+        
+        .stat-box:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        
+        .stat-box.highlight {
+            border-color: var(--accent);
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-num {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .container-stat {
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: var(--surface-elevated);
+            transition: all var(--transition-fast);
+        }
+        
+        .container-stat:hover {
+            border-color: var(--border-bright);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .container-stat-header {
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .container-stat-detail {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
 
-        /* CONTAINER SELECTOR */
-        .container-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
-        .container-btn { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap; }
-        .container-btn:hover { background: #1a1a1a; color: var(--text); }
-        .container-btn.active { background: white; color: black; border-color: white; font-weight: bold; }
-        .container-info { font-size: 0.75rem; color: var(--text-dim); margin-top: 6px; width: 100%; }
+        /* --- CONTAINER SELECTOR --- */
+        .container-selector {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            padding: 10px;
+            border: 1px solid var(--border-bright);
+            border-radius: 10px;
+            background: var(--surface-elevated);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .container-btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+            text-transform: uppercase;
+            user-select: none;
+        }
+        
+        .container-btn:hover {
+            background: var(--surface-elevated);
+            color: var(--text);
+            border-color: var(--border-bright);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .container-btn.active {
+            background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            color: black;
+            border-color: var(--accent);
+            box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .container-info {
+            font-size: 0.7rem;
+            color: var(--text-dimmer);
+            margin-top: 8px;
+            width: 100%;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
 
         /* --- BOTTOM NAV --- */
-        nav { display: flex; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); }
-        .nav-item { flex: 1; padding: 15px; text-align: center; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; border-top: 2px solid transparent; }
-        .nav-item.active { color: white; border-top-color: white; }
-
-        /* Overlay for sidebar */
-        #overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 900; display: none; }
-        #overlay.show { display: block; }
-
-        /* Responsive tweaks */
-        @media (max-width: 480px) {
-            .card { max-width: 300px; height: 220px; font-size: 1rem; }
-            #sidebar { width: 240px; left: -240px; }
-            
-            /* Container selector - much more compact */
-            .container-selector { padding: 5px; gap: 4px; margin-bottom: 8px; }
-            .container-btn { padding: 5px 8px; font-size: 0.7rem; min-width: auto; }
-            .container-info { font-size: 0.65rem; margin-top: 4px; }
-            
-            /* Flashcard controls - more spacing */
-            .controls { gap: 15px; margin-top: 15px; padding: 0 10px; }
-            .btn { padding: 10px 20px; font-size: 0.9rem; flex: 1; max-width: 150px; }
-            
-            /* Flashcard container - less height to fit controls */
-            .flashcard-container { flex: 0.8; }
+        nav {
+            display: flex;
+            border-top: 1px solid var(--border-bright);
+            padding-bottom: env(safe-area-inset-bottom);
+            background: var(--surface);
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .nav-item {
+            flex: 1;
+            padding: 16px 12px;
+            text-align: center;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-top: 2px solid transparent;
+            transition: all var(--transition-fast);
+            text-transform: uppercase;
+            user-select: none;
+            position: relative;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 60%;
+            height: 2px;
+            background: var(--accent);
+            transition: transform var(--transition-normal);
+        }
+        
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .nav-item.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item.active::before {
+            transform: translateX(-50%) scaleX(1);
         }
 
+        /* --- OVERLAY --- */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 900;
+            display: none;
+            transition: opacity var(--transition-normal);
+        }
+        
+        #overlay.show {
+            display: block;
+            animation: fadeIn var(--transition-normal);
+        }
+
+        /* --- LOADING STATE --- */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-bright);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- RESPONSIVE TWEAKS --- */
+        @media (max-width: 480px) {
+            .sidebar-header {
+                padding: 20px 16px;
+            }
+            
+            .sidebar-header-title {
+                font-size: 1.2rem;
+                letter-spacing: 1.5px;
+            }
+            
+            #sidebar {
+                width: 260px;
+                left: -260px;
+            }
+            
+            header {
+                padding: 14px 16px;
+            }
+            
+            #header-title {
+                font-size: 0.9rem;
+            }
+            
+            #content-area {
+                padding: 16px;
+            }
+            
+            .flashcard-container {
+                padding: 12px 0;
+            }
+            
+            .card {
+                max-width: 100%;
+                height: 240px;
+            }
+            
+            .card-face {
+                font-size: 1.1rem;
+                padding: 24px 20px;
+            }
+            
+            .controls {
+                gap: 10px;
+                margin-top: 16px;
+                padding: 0 12px;
+            }
+            
+            .btn {
+                flex: 1;
+                padding: 12px 20px;
+                font-size: 0.8rem;
+                max-width: 160px;
+            }
+            
+            .container-selector {
+                padding: 8px;
+                gap: 5px;
+                margin-bottom: 12px;
+            }
+            
+            .container-btn {
+                padding: 6px 10px;
+                font-size: 0.7rem;
+            }
+            
+            .container-info {
+                font-size: 0.65rem;
+                margin-top: 6px;
+            }
+            
+            .stat-box {
+                padding: 20px;
+            }
+            
+            .stat-num {
+                font-size: 2rem;
+            }
+            
+            .db-button-group {
+                flex-direction: column;
+            }
+            
+            .db-button-group .btn {
+                width: 100%;
+            }
+            
+            nav {
+                padding-bottom: max(env(safe-area-inset-bottom), 8px);
+            }
+            
+            .nav-item {
+                padding: 14px 8px;
+                font-size: 0.7rem;
+            }
+        }
+        
+        /* iPhone 6s specific (375x667) */
+        @media (max-width: 375px) {
+            .sidebar-header-title {
+                font-size: 1.1rem;
+            }
+            
+            .card {
+                height: 220px;
+            }
+            
+            .card-face {
+                font-size: 1rem;
+                padding: 20px 16px;
+            }
+            
+            .stat-num {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* Landscape mode */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .card {
+                height: 180px;
+                max-width: 320px;
+            }
+            
+            .card-face {
+                font-size: 0.95rem;
+                padding: 16px;
+            }
+            
+            .controls {
+                margin-top: 12px;
+            }
+            
+            .flashcard-container {
+                padding: 8px 0;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div id="overlay" onclick="toggleSidebar()"></div>
+    
     <aside id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-header-title">SUBJECTS</div>
-            <div class="sidebar-subtitle">📦 Cards sync • 📊 Progress stays local</div>
+            <div class="sidebar-header-title">MonoFlash</div>
+            <div class="sidebar-subtitle">📦 Cards sync across devices<br>📊 Progress stays local</div>
         </div>
         <div class="sidebar-content" id="subject-list">
             <!-- Subjects load here -->
@@ -208,7 +1113,6 @@
         
         <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
         
-        <!-- SYNC SETTINGS -->
         <div class="sync-btn-container">
             <button class="sync-btn" onclick="manualSync()">
                 <div class="sync-status-dot" id="sync-dot"></div>
@@ -217,30 +1121,28 @@
             <button class="sync-btn" onclick="changeSyncId()">
                 <span>🔗 Link Device</span>
             </button>
-            <div style="font-size:0.65rem; color:#666; margin-top:5px; text-align:center; font-family: monospace;">
+            <div class="device-id-display">
                 ID: <span id="current-device-id">...</span>
             </div>
+            <div class="sync-help-text" id="sync-help">Checking connection...</div>
         </div>
     </aside>
 
     <main id="main">
         <header>
-            <div class="menu-btn" onclick="toggleSidebar()">☰</div>
-            <h1 id="header-title" style="font-size: 1.2rem; margin:0;">Select a Subject</h1>
+            <div class="menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</div>
+            <h1 id="header-title">Select a Subject</h1>
         </header>
 
         <section id="content-area">
             
             <div id="tab-flashcard" class="tab-view active">
-                <!-- Container Selector (includes Review Missed button) -->
-                <div class="container-selector" id="container-selector" style="display: none;">
-                    <!-- Buttons will be added here dynamically -->
-                </div>
+                <div class="container-selector" id="container-selector" style="display: none;"></div>
                 
                 <div class="flashcard-container">
                     <div class="card" onclick="flipCard()" id="active-card">
-                        <div class="card-face card-front" id="card-front">Select a sub-subject</div>
-                        <div class="card-face card-back" id="card-back">...to start</div>
+                        <div class="card-face card-front" id="card-front">Select a topic to begin</div>
+                        <div class="card-face card-back" id="card-back">Your journey starts here</div>
                     </div>
                 </div>
                 <div class="controls">
@@ -252,43 +1154,39 @@
             <div id="tab-performance" class="tab-view">
                 <div class="stat-box">
                     <div class="stat-num" id="stat-total">0</div>
-                    <div>Cards Reviewed (This Session)</div>
+                    <div class="stat-label">Cards Reviewed</div>
                 </div>
-                <div class="stat-box" style="border-color: #fff;">
+                <div class="stat-box highlight">
                     <div class="stat-num" id="stat-score">0%</div>
-                    <div>Accuracy</div>
+                    <div class="stat-label">Accuracy</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num" id="stat-due">-</div>
-                    <div>Cards Due Today</div>
+                    <div class="stat-label">Cards Due Today</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num" id="stat-mastered">-</div>
-                    <div>Cards Mastered (7+ days)</div>
+                    <div class="stat-label">Mastered (7+ days)</div>
                 </div>
                 
-                <!-- Container-specific stats -->
-                <div id="container-stats" style="margin-top: 20px;">
-                    <!-- Container stats will be added here dynamically -->
-                </div>
+                <div id="container-stats" style="margin-top: 24px;"></div>
             </div>
 
             <div id="tab-database" class="tab-view">
-                <h3>Add Data</h3>
-                <p style="color:#666; font-size: 0.8rem;">Format: Question -!- Answer (one per line) OR JSON: [{"q":"Front", "a":"Back"}]</p>
+                <h3 class="db-section-title">Add Data</h3>
+                <p class="db-subtitle">Format: Question -!- Answer (one per line)<br>OR JSON: [{"q":"Front", "a":"Back"}]</p>
                 <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
 What is speed? -!- Distance over time'></textarea>
-                <!-- file input for direct JSON import -->
                 <input id="file-input" type="file" accept="application/json,.json" style="display:none" onchange="importJsonFile(event)">
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-primary" style="flex:1" onclick="importJson()" aria-label="Import JSON">Import Data</button>
-                    <button class="btn" style="width:160px" onclick="exportJson()" aria-label="Export JSON">Export JSON</button>
-                    <button class="btn" style="width:170px" onclick="document.getElementById('file-input').click()" aria-label="Import JSON file">Import from file</button>
+                <div class="db-button-group">
+                    <button class="btn btn-primary" onclick="importJson()">Import Data</button>
+                    <button class="btn" onclick="exportJson()">Export JSON</button>
+                    <button class="btn" onclick="document.getElementById('file-input').click()">Import File</button>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 30px;">
-                    <h3 style="margin: 0;">Current Entries</h3>
-                    <button class="btn" onclick="clearAllCards()" style="padding: 8px 16px; font-size: 0.9rem;">Clear All</button>
+                <div class="db-list-header">
+                    <h3>Current Entries</h3>
+                    <button class="btn" onclick="clearAllCards()" style="padding: 8px 16px; font-size: 0.75rem;">Clear All</button>
                 </div>
                 <div id="db-list"></div>
             </div>
@@ -296,9 +1194,9 @@ What is speed? -!- Distance over time'></textarea>
         </section>
 
         <nav>
-            <div class="nav-item active" onclick="switchTab('flashcard', this)">FLASHCARDS</div>
-            <div class="nav-item" onclick="switchTab('performance', this)">STATS</div>
-            <div class="nav-item" onclick="switchTab('database', this)">DATA</div>
+            <div class="nav-item active" onclick="switchTab('flashcard', this)">Cards</div>
+            <div class="nav-item" onclick="switchTab('performance', this)">Stats</div>
+            <div class="nav-item" onclick="switchTab('database', this)">Data</div>
         </nav>
     </main>
 
@@ -335,9 +1233,9 @@ What is speed? -!- Distance over time'></textarea>
         let syncInProgress = false;
         const syncDot = document.getElementById('sync-dot');
         const syncText = document.getElementById('sync-text');
+        const syncHelp = document.getElementById('sync-help');
         
         // ==================== DATA STRUCTURE ====================
-        // OPTIMIZATION: Separate card content (synced) from SRS progress (local)
         
         let cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent')) || {};
         let srsData = JSON.parse(localStorage.getItem('monoFlashSRSData')) || {};
@@ -349,7 +1247,6 @@ What is speed? -!- Distance over time'></textarea>
         let shuffledCards = [];
         let dueCards = [];
         
-        // --- CONTAINER & REVIEW MISSED FEATURES ---
         const CARDS_PER_CONTAINER = 20;
         let currentContainer = 'all';
         let reviewMissedMode = false;
@@ -438,23 +1335,35 @@ What is speed? -!- Distance over time'></textarea>
         // ==================== FIREBASE SYNC ====================
         
         async function syncToCloud() {
-            if (syncInProgress || !window.firebaseDB) return;
+            if (syncInProgress) return;
+            
+            if (!window.firebaseReady || !window.firebaseDB) {
+                console.log('⚠️ Firebase not ready, skipping sync');
+                syncDot.className = 'sync-status-dot offline';
+                syncText.textContent = "Offline Mode";
+                syncHelp.textContent = "Working locally. Sync when online.";
+                return;
+            }
             
             try {
                 syncInProgress = true;
                 syncDot.className = 'sync-status-dot';
-                syncText.textContent = "Syncing...";
+                syncText.innerHTML = '<span class="loading-spinner"></span> Syncing...';
+                syncHelp.textContent = 'Uploading to cloud...';
                 
                 const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+                
+                // Use merge option to avoid overwriting
                 await window.firebaseSetDoc(docRef, {
                     cardContent: cardContent,
                     lastSync: Date.now(),
                     deviceId: DEVICE_ID
-                });
+                }, { merge: true });
                 
                 console.log('✅ Synced card content to cloud');
                 syncDot.className = 'sync-status-dot online';
                 syncText.textContent = "Synced ✓";
+                syncHelp.textContent = "All data backed up to cloud";
                 
                 setTimeout(() => {
                     if (syncText.textContent === "Synced ✓") {
@@ -467,7 +1376,13 @@ What is speed? -!- Distance over time'></textarea>
                 syncText.textContent = "Sync Failed";
                 
                 if (error.code === 'permission-denied') {
-                    alert("Sync Failed: Permission Denied.\n\nPlease check your Firebase Console > Firestore Database > Rules.");
+                    syncHelp.textContent = "Permission denied. Check Firebase rules.";
+                    console.error('🔒 FIREBASE PERMISSION ERROR - See instructions below');
+                } else if (error.code === 'unavailable') {
+                    syncDot.className = 'sync-status-dot offline';
+                    syncHelp.textContent = "No internet. Working offline.";
+                } else {
+                    syncHelp.textContent = error.message || "Sync error occurred";
                 }
                 
                 setTimeout(() => {
@@ -479,12 +1394,16 @@ What is speed? -!- Distance over time'></textarea>
         }
         
         async function loadFromCloud() {
-            if (!window.firebaseDB) {
-                console.log('Firebase not ready, using localStorage');
+            if (!window.firebaseReady || !window.firebaseDB) {
+                console.log('⚠️ Firebase not ready, using localStorage only');
+                syncDot.className = 'sync-status-dot offline';
+                syncHelp.textContent = "Offline mode - data stored locally";
                 return;
             }
             
             try {
+                syncHelp.textContent = 'Checking for cloud data...';
+                
                 const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
                 const docSnap = await window.firebaseGetDoc(docRef);
                 
@@ -500,8 +1419,10 @@ What is speed? -!- Distance over time'></textarea>
                             localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
                             localStorage.setItem('monoFlashCardContent_timestamp', JSON.stringify(cloudTimestamp));
                             console.log('📥 Loaded newer card content from cloud');
+                            syncHelp.textContent = "Loaded data from cloud";
                         } else {
                             console.log('📦 Local card content is up to date');
+                            syncHelp.textContent = "Local data is current";
                         }
                     }
                     
@@ -511,12 +1432,23 @@ What is speed? -!- Distance over time'></textarea>
                     
                     syncDot.className = 'sync-status-dot online';
                 } else {
-                    console.log('No cloud data found, will sync local data');
+                    console.log('📤 No cloud data found, will sync local data');
+                    syncHelp.textContent = "Ready to sync";
                     syncToCloud();
                 }
             } catch (error) {
-                console.error('Error loading from cloud:', error);
-                syncDot.className = 'sync-status-dot error';
+                console.error('⚠️ Error loading from cloud:', error);
+                
+                if (error.code === 'unavailable' || error.message.includes('offline')) {
+                    syncDot.className = 'sync-status-dot offline';
+                    syncHelp.textContent = "No internet. Working offline.";
+                } else if (error.code === 'permission-denied') {
+                    syncDot.className = 'sync-status-dot error';
+                    syncHelp.textContent = "Permission denied. Check Firebase rules.";
+                } else {
+                    syncDot.className = 'sync-status-dot error';
+                    syncHelp.textContent = "Connection error. Using local data.";
+                }
             }
         }
 
@@ -580,17 +1512,25 @@ What is speed? -!- Distance over time'></textarea>
                 titleText.onclick = () => toggleSubject(subject);
                 title.appendChild(titleText);
                 
+                const actions = document.createElement('div');
+                actions.className = 'subject-actions';
+                
+                const chevron = document.createElement('span');
+                chevron.className = 'chevron';
+                chevron.textContent = '▼';
+                chevron.onclick = () => toggleSubject(subject);
+                actions.appendChild(chevron);
+                
                 const deleteBtn = document.createElement('span');
+                deleteBtn.className = 'delete-icon';
                 deleteBtn.textContent = '×';
-                deleteBtn.style.cursor = 'pointer';
-                deleteBtn.style.fontSize = '1.5rem';
-                deleteBtn.style.color = '#666';
                 deleteBtn.onclick = (e) => {
                     e.stopPropagation();
                     deleteSubject(subject);
                 };
-                title.appendChild(deleteBtn);
+                actions.appendChild(deleteBtn);
                 
+                title.appendChild(actions);
                 item.appendChild(title);
                 
                 const subList = document.createElement('div');
@@ -609,10 +1549,8 @@ What is speed? -!- Distance over time'></textarea>
                     subItem.appendChild(subText);
                     
                     const subDeleteBtn = document.createElement('span');
+                    subDeleteBtn.className = 'delete-icon';
                     subDeleteBtn.textContent = '×';
-                    subDeleteBtn.style.cursor = 'pointer';
-                    subDeleteBtn.style.fontSize = '1.2rem';
-                    subDeleteBtn.style.color = '#666';
                     subDeleteBtn.onclick = (e) => {
                         e.stopPropagation();
                         deleteSub(subject, sub);
@@ -625,7 +1563,7 @@ What is speed? -!- Distance over time'></textarea>
                 const addSubBtn = document.createElement('div');
                 addSubBtn.className = 'add-btn';
                 addSubBtn.textContent = '+ Add Topic';
-                addSubBtn.style.margin = '5px 0';
+                addSubBtn.style.margin = '8px';
                 addSubBtn.onclick = () => addNewSub(subject);
                 subList.appendChild(addSubBtn);
                 
@@ -636,8 +1574,10 @@ What is speed? -!- Distance over time'></textarea>
 
         function toggleSubject(subject) {
             const subList = document.getElementById('sub-' + safeId(subject));
-            if (subList) {
+            const item = subList?.parentElement;
+            if (subList && item) {
                 subList.classList.toggle('show');
+                item.classList.toggle('expanded');
                 saveSidebarState();
             }
         }
@@ -658,7 +1598,10 @@ What is speed? -!- Distance over time'></textarea>
                     const openSubjects = JSON.parse(saved);
                     openSubjects.forEach(id => {
                         const el = document.getElementById('sub-' + id);
-                        if (el) el.classList.add('show');
+                        if (el) {
+                            el.classList.add('show');
+                            el.parentElement?.classList.add('expanded');
+                        }
                     });
                 } catch (e) {
                     console.error('Error loading sidebar state:', e);
@@ -743,7 +1686,7 @@ What is speed? -!- Distance over time'></textarea>
             cardIndex = 0;
             sessionStats = { total: 0, correct: 0 };
             
-            document.getElementById('header-title').textContent = subject + " > " + sub;
+            document.getElementById('header-title').textContent = subject + " › " + sub;
             
             ensureSRSDataExists();
             
@@ -783,8 +1726,8 @@ What is speed? -!- Distance over time'></textarea>
             card.classList.remove('flipped');
             
             if (shuffledCards.length === 0 || cardIndex >= shuffledCards.length) {
-                front.textContent = currentSubject && currentSub ? "No cards available" : "Select a sub-subject";
-                back.textContent = currentSubject && currentSub ? "Add some cards!" : "...to start";
+                front.textContent = currentSubject && currentSub ? "No cards available" : "Select a topic to begin";
+                back.textContent = currentSubject && currentSub ? "Add some cards in the Data tab" : "Your journey starts here";
                 return;
             }
             
@@ -1035,13 +1978,23 @@ What is speed? -!- Distance over time'></textarea>
             cards.forEach((c, idx) => {
                 const item = document.createElement('div');
                 item.className = 'db-item';
-                item.innerHTML = `
-                    <div>
-                        <div class="db-key">${c.q}</div>
-                        <div style="color:#888">${c.a}</div>
-                    </div>
-                    <button class="btn" onclick="deleteCard(${idx})" style="padding: 5px 10px; font-size: 0.8rem;">Delete</button>
+                
+                const content = document.createElement('div');
+                content.className = 'db-item-content';
+                content.innerHTML = `
+                    <div class="db-key">${c.q}</div>
+                    <div class="db-value">${c.a}</div>
                 `;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn';
+                deleteBtn.style.padding = '6px 12px';
+                deleteBtn.style.fontSize = '0.75rem';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => deleteCard(idx);
+                
+                item.appendChild(content);
+                item.appendChild(deleteBtn);
                 list.appendChild(item);
             });
         }
@@ -1157,7 +2110,7 @@ What is speed? -!- Distance over time'></textarea>
                 
                 const info = document.createElement('div');
                 info.className = 'container-info';
-                info.textContent = `${allCards.length} total cards • ${CARDS_PER_CONTAINER} cards per container`;
+                info.textContent = `${allCards.length} total cards • ${CARDS_PER_CONTAINER} per container`;
                 container.appendChild(info);
             }
         }
@@ -1242,7 +2195,7 @@ What is speed? -!- Distance over time'></textarea>
                 return;
             }
             
-            statsContainer.innerHTML = '<h3 style="margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Container Breakdown</h3>';
+            statsContainer.innerHTML = '<h3 class="db-section-title" style="margin-bottom: 16px;">Container Breakdown</h3>';
             
             for (let i = 0; i < numContainers; i++) {
                 const startIdx = i * CARDS_PER_CONTAINER;
@@ -1305,9 +2258,22 @@ What is speed? -!- Distance over time'></textarea>
         renderSidebar();
         loadSidebarState();
         
-        setTimeout(() => {
-            loadFromCloud();
-        }, 1000);
+        // Wait for Firebase to be ready, then load from cloud
+        let firebaseCheckAttempts = 0;
+        const firebaseCheckInterval = setInterval(() => {
+            firebaseCheckAttempts++;
+            
+            if (window.firebaseReady) {
+                clearInterval(firebaseCheckInterval);
+                loadFromCloud();
+            } else if (firebaseCheckAttempts > 10) {
+                // After 10 attempts (5 seconds), give up and use offline mode
+                clearInterval(firebaseCheckInterval);
+                console.log('⚠️ Firebase initialization timeout, working in offline mode');
+                syncDot.className = 'sync-status-dot offline';
+                syncHelp.textContent = "Offline mode - data stored locally";
+            }
+        }, 500);
 
     </script>
 </body>
