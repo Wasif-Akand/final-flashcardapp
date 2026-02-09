@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<meta name="apple-mobile-web-app-title" content="MonoFlash">
+    <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash</title>
     
     <!-- Firebase SDK -->
@@ -16,6 +13,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
+        // ⚠️ REPLACE THIS WITH YOUR NEW FIREBASE PROJECT CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyAXul0bzX2-X9qj3t51u6EjhZFFE7mi1ac",
             authDomain: "flashcards-fb9ab.firebaseapp.com",
@@ -25,23 +23,31 @@
             appId: "1:975345059409:web:fb9048868da5afe6f45a70"
         };
         
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        console.log('🔧 Initializing Firebase with project:', firebaseConfig.projectId);
         
-        // Enable offline persistence
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code === 'failed-precondition') {
-                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-            } else if (err.code === 'unimplemented') {
-                console.warn('The current browser does not support offline persistence');
-            }
-        });
-        
-        window.firebaseDB = db;
-        window.firebaseDoc = doc;
-        window.firebaseSetDoc = setDoc;
-        window.firebaseGetDoc = getDoc;
-        window.firebaseReady = true;
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            
+            // Enable offline persistence
+            enableIndexedDbPersistence(db).catch((err) => {
+                if (err.code === 'failed-precondition') {
+                    console.warn('⚠️ Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                } else if (err.code === 'unimplemented') {
+                    console.warn('⚠️ The current browser does not support offline persistence');
+                }
+            });
+            
+            window.firebaseDB = db;
+            window.firebaseDoc = doc;
+            window.firebaseSetDoc = setDoc;
+            window.firebaseGetDoc = getDoc;
+            window.firebaseReady = true;
+            console.log('✅ Firebase initialized successfully');
+        } catch (error) {
+            console.error('❌ Firebase initialization failed:', error);
+            window.firebaseReady = false;
+        }
     </script>
     
     <style>
@@ -963,6 +969,23 @@
             to { transform: rotate(360deg); }
         }
 
+        /* --- DIAGNOSTIC BANNER --- */
+        .diagnostic-banner {
+            background: #1a1a00;
+            border: 1px solid #ffaa00;
+            padding: 12px;
+            margin: 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #ffaa00;
+            font-family: monospace;
+            line-height: 1.6;
+        }
+        
+        .diagnostic-banner strong {
+            color: #fff;
+        }
+
         /* --- RESPONSIVE TWEAKS --- */
         @media (max-width: 480px) {
             .sidebar-header {
@@ -1140,6 +1163,12 @@
 
         <section id="content-area">
             
+            <!-- Diagnostic Banner (shown when there are errors) -->
+            <div id="diagnostic-banner" class="diagnostic-banner" style="display: none;">
+                <strong>🔧 Firebase Setup Instructions:</strong><br>
+                <span id="diagnostic-message"></span>
+            </div>
+            
             <div id="tab-flashcard" class="tab-view active">
                 <div class="container-selector" id="container-selector" style="display: none;"></div>
                 
@@ -1177,7 +1206,15 @@
             </div>
 
             <div id="tab-database" class="tab-view">
-                <h3 class="db-section-title">Add Data</h3>
+                <h3 class="db-section-title">🌐 Full Backup/Restore</h3>
+                <p class="db-subtitle">Export or import ALL your subjects, topics, and cards in one file</p>
+                <input id="full-backup-input" type="file" accept="application/json,.json" style="display:none" onchange="importFullBackup(event)">
+                <div class="db-button-group">
+                    <button class="btn btn-primary" onclick="exportFullBackup()">📦 Export ALL Data</button>
+                    <button class="btn" onclick="document.getElementById('full-backup-input').click()">📥 Import ALL Data</button>
+                </div>
+                
+                <h3 class="db-section-title" style="margin-top: 32px;">➕ Add Cards to Current Topic</h3>
                 <p class="db-subtitle">Format: Question -!- Answer (one per line)<br>OR JSON: [{"q":"Front", "a":"Back"}]</p>
                 <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
 What is speed? -!- Distance over time'></textarea>
@@ -1238,6 +1275,13 @@ What is speed? -!- Distance over time'></textarea>
         const syncDot = document.getElementById('sync-dot');
         const syncText = document.getElementById('sync-text');
         const syncHelp = document.getElementById('sync-help');
+        
+        function showDiagnostic(message) {
+            const banner = document.getElementById('diagnostic-banner');
+            const messageEl = document.getElementById('diagnostic-message');
+            messageEl.innerHTML = message;
+            banner.style.display = 'block';
+        }
         
         // ==================== DATA STRUCTURE ====================
         
@@ -1346,6 +1390,15 @@ What is speed? -!- Distance over time'></textarea>
                 syncDot.className = 'sync-status-dot offline';
                 syncText.textContent = "Offline Mode";
                 syncHelp.textContent = "Working locally. Sync when online.";
+                
+                showDiagnostic(`
+                    <strong>Firebase Not Initialized</strong><br><br>
+                    1. Go to <a href="https://console.firebase.google.com/" target="_blank" style="color:#ffcc00">Firebase Console</a><br>
+                    2. Create a new project<br>
+                    3. Enable Cloud Firestore (Build → Firestore Database → Create Database)<br>
+                    4. Update the config at the top of this HTML file<br>
+                    5. Set Firestore Rules to allow read/write
+                `);
                 return;
             }
             
@@ -1357,17 +1410,27 @@ What is speed? -!- Distance over time'></textarea>
                 
                 const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
                 
-                // Use merge option to avoid overwriting
-                await window.firebaseSetDoc(docRef, {
-                    cardContent: cardContent,
-                    lastSync: Date.now(),
-                    deviceId: DEVICE_ID
-                }, { merge: true });
+                // Add timeout
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Sync timeout')), 15000)
+                );
+                
+                await Promise.race([
+                    window.firebaseSetDoc(docRef, {
+                        cardContent: cardContent,
+                        lastSync: Date.now(),
+                        deviceId: DEVICE_ID
+                    }, { merge: true }),
+                    timeoutPromise
+                ]);
                 
                 console.log('✅ Synced card content to cloud');
                 syncDot.className = 'sync-status-dot online';
                 syncText.textContent = "Synced ✓";
                 syncHelp.textContent = "All data backed up to cloud";
+                
+                // Hide diagnostic banner on success
+                document.getElementById('diagnostic-banner').style.display = 'none';
                 
                 setTimeout(() => {
                     if (syncText.textContent === "Synced ✓") {
@@ -1376,17 +1439,59 @@ What is speed? -!- Distance over time'></textarea>
                 }, 2000);
             } catch (error) {
                 console.error('❌ Sync error:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                
                 syncDot.className = 'sync-status-dot error';
                 syncText.textContent = "Sync Failed";
                 
-                if (error.code === 'permission-denied') {
-                    syncHelp.textContent = "Permission denied. Check Firebase rules.";
-                    console.error('🔒 FIREBASE PERMISSION ERROR - See instructions below');
-                } else if (error.code === 'unavailable') {
+                if (error.message === 'Sync timeout' || error.code === 'unavailable') {
                     syncDot.className = 'sync-status-dot offline';
                     syncHelp.textContent = "No internet. Working offline.";
+                    showDiagnostic(`
+                        <strong>Network Connection Issue</strong><br><br>
+                        • Check your internet connection<br>
+                        • Try disabling VPN if active<br>
+                        • Check if firebaseapp.com is blocked<br>
+                        • Your data is safe locally - sync when online
+                    `);
+                } else if (error.code === 'permission-denied') {
+                    syncHelp.textContent = "Permission denied. Fix Firebase rules.";
+                    showDiagnostic(`
+                        <strong>Firebase Permission Denied</strong><br><br>
+                        1. Go to <a href="https://console.firebase.google.com/" target="_blank" style="color:#ffcc00">Firebase Console</a><br>
+                        2. Select your project: <code>${error.projectId || 'flashcards-fb9ab'}</code><br>
+                        3. Go to Build → Firestore Database → Rules<br>
+                        4. Paste this rule:<br>
+                        <pre style="background:#000;padding:8px;margin-top:6px;border-radius:4px;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /flashcards/{deviceId} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+                        5. Click "Publish"
+                    `);
+                } else if (error.code === 'not-found') {
+                    syncHelp.textContent = "Firestore not enabled.";
+                    showDiagnostic(`
+                        <strong>Firestore Database Not Found</strong><br><br>
+                        1. Go to <a href="https://console.firebase.google.com/" target="_blank" style="color:#ffcc00">Firebase Console</a><br>
+                        2. Select your project<br>
+                        3. Go to Build → Firestore Database<br>
+                        4. Click "Create Database"<br>
+                        5. Choose a location (any region works)<br>
+                        6. Start in "Test Mode" (or set rules manually)
+                    `);
                 } else {
                     syncHelp.textContent = error.message || "Sync error occurred";
+                    showDiagnostic(`
+                        <strong>Firebase Error</strong><br><br>
+                        Error: ${error.code || 'unknown'}<br>
+                        Message: ${error.message || 'No details'}<br><br>
+                        Your data is safe locally. Check Firebase Console for more info.
+                    `);
                 }
                 
                 setTimeout(() => {
@@ -1402,14 +1507,30 @@ What is speed? -!- Distance over time'></textarea>
                 console.log('⚠️ Firebase not ready, using localStorage only');
                 syncDot.className = 'sync-status-dot offline';
                 syncHelp.textContent = "Offline mode - data stored locally";
+                showDiagnostic(`
+                    <strong>Working in Offline Mode</strong><br><br>
+                    Firebase is not initialized. Your data is stored locally on this device only.<br><br>
+                    To enable cloud sync:<br>
+                    1. Set up a Firebase project<br>
+                    2. Update the config in this HTML file<br>
+                    3. Enable Firestore Database
+                `);
                 return;
             }
             
             try {
                 syncHelp.textContent = 'Checking for cloud data...';
                 
+                // Add timeout to prevent hanging
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 15000)
+                );
+                
                 const docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-                const docSnap = await window.firebaseGetDoc(docRef);
+                const docSnap = await Promise.race([
+                    window.firebaseGetDoc(docRef),
+                    timeoutPromise
+                ]);
                 
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
@@ -1423,10 +1544,10 @@ What is speed? -!- Distance over time'></textarea>
                             localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
                             localStorage.setItem('monoFlashCardContent_timestamp', JSON.stringify(cloudTimestamp));
                             console.log('📥 Loaded newer card content from cloud');
-                            syncHelp.textContent = "Loaded data from cloud";
+                            syncHelp.textContent = "✓ Synced from cloud";
                         } else {
                             console.log('📦 Local card content is up to date');
-                            syncHelp.textContent = "Local data is current";
+                            syncHelp.textContent = "✓ Local data current";
                         }
                     }
                     
@@ -1435,23 +1556,53 @@ What is speed? -!- Distance over time'></textarea>
                     renderSidebar();
                     
                     syncDot.className = 'sync-status-dot online';
+                    // Hide diagnostic banner on successful connection
+                    document.getElementById('diagnostic-banner').style.display = 'none';
                 } else {
                     console.log('📤 No cloud data found, will sync local data');
                     syncHelp.textContent = "Ready to sync";
+                    syncDot.className = 'sync-status-dot online';
                     syncToCloud();
                 }
             } catch (error) {
                 console.error('⚠️ Error loading from cloud:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
                 
-                if (error.code === 'unavailable' || error.message.includes('offline')) {
+                if (error.message === 'Connection timeout' || error.code === 'unavailable' || error.message.includes('offline')) {
                     syncDot.className = 'sync-status-dot offline';
                     syncHelp.textContent = "No internet. Working offline.";
+                    showDiagnostic(`
+                        <strong>Cannot Connect to Firebase</strong><br><br>
+                        • Check your internet connection<br>
+                        • Verify firebaseapp.com is accessible<br>
+                        • Try again in a few moments<br>
+                        • Your data is safe locally
+                    `);
                 } else if (error.code === 'permission-denied') {
                     syncDot.className = 'sync-status-dot error';
-                    syncHelp.textContent = "Permission denied. Check Firebase rules.";
+                    syncHelp.textContent = "Permission denied. Check Firebase setup.";
+                    showDiagnostic(`
+                        <strong>Firebase Permission Denied</strong><br><br>
+                        Go to Firebase Console → Firestore → Rules and update them to allow read/write.<br><br>
+                        See the sync error diagnostic above for detailed instructions.
+                    `);
+                } else if (error.code === 'not-found') {
+                    syncDot.className = 'sync-status-dot error';
+                    syncHelp.textContent = "Firestore not enabled. Check Firebase Console.";
+                    showDiagnostic(`
+                        <strong>Firestore Database Not Found</strong><br><br>
+                        Enable Firestore in Firebase Console → Build → Firestore Database → Create Database
+                    `);
                 } else {
                     syncDot.className = 'sync-status-dot error';
-                    syncHelp.textContent = "Connection error. Using local data.";
+                    syncHelp.textContent = "Connection failed. Working offline.";
+                    showDiagnostic(`
+                        <strong>Firebase Connection Error</strong><br><br>
+                        Error: ${error.code || 'unknown'}<br>
+                        Message: ${error.message || 'No details available'}<br><br>
+                        Your data is saved locally. Check the browser console for more details.
+                    `);
                 }
             }
         }
@@ -1972,6 +2123,114 @@ What is speed? -!- Distance over time'></textarea>
             URL.revokeObjectURL(url);
         }
 
+        function exportFullBackup() {
+            // Create a complete backup with metadata
+            const backup = {
+                version: 1,
+                exportDate: new Date().toISOString(),
+                deviceId: DEVICE_ID,
+                cardContent: cardContent,
+                // Don't include SRS data since it's device-specific
+                metadata: {
+                    totalSubjects: Object.keys(cardContent).length,
+                    totalCards: Object.values(cardContent).reduce((total, subject) => {
+                        return total + Object.values(subject).reduce((subTotal, cards) => {
+                            return subTotal + cards.length;
+                        }, 0);
+                    }, 0)
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Create filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            a.download = `MonoFlash-Backup-${timestamp}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ Backup created!\n\n${backup.metadata.totalSubjects} subjects\n${backup.metadata.totalCards} total cards\n\nSaved as: MonoFlash-Backup-${timestamp}.json`);
+        }
+
+        function importFullBackup(e) {
+            const file = (e && e.target && e.target.files && e.target.files[0]) || null;
+            if (!file) return;
+            
+            // Confirm before importing
+            if (!confirm('⚠️ IMPORTANT: This will REPLACE all your current data.\n\nAre you sure you want to continue?\n\n(Your current data will be overwritten)')) {
+                e.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const backup = JSON.parse(String(ev.target.result));
+                    
+                    // Validate backup format
+                    if (!backup.cardContent || typeof backup.cardContent !== 'object') {
+                        alert('❌ Invalid backup file format.\n\nThis doesn\'t appear to be a valid MonoFlash backup.');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Show what will be imported
+                    const subjectCount = Object.keys(backup.cardContent).length;
+                    let totalCards = 0;
+                    for (let subject in backup.cardContent) {
+                        for (let sub in backup.cardContent[subject]) {
+                            if (Array.isArray(backup.cardContent[subject][sub])) {
+                                totalCards += backup.cardContent[subject][sub].length;
+                            }
+                        }
+                    }
+                    
+                    if (!confirm(`📦 Ready to import:\n\n✓ ${subjectCount} subjects\n✓ ${totalCards} total cards\n\nThis will replace all your current data.\n\nProceed?`)) {
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Import the data
+                    cardContent = backup.cardContent;
+                    
+                    // Reset SRS data for new cards
+                    srsData = {};
+                    
+                    // Save to localStorage
+                    ensureSRSDataExists();
+                    saveData();
+                    
+                    // Sync to cloud
+                    syncToCloud();
+                    
+                    // Update UI
+                    renderSidebar();
+                    loadSidebarState();
+                    renderDbList();
+                    
+                    // Reset current selection
+                    currentSubject = null;
+                    currentSub = null;
+                    document.getElementById('header-title').textContent = 'Select a Subject';
+                    renderCard();
+                    
+                    alert(`✅ Import successful!\n\n${subjectCount} subjects imported\n${totalCards} cards restored\n\nYour data has been synced to cloud.`);
+                } catch (err) {
+                    console.error('Import error:', err);
+                    alert('❌ Failed to import backup file.\n\nThe file may be corrupted or in the wrong format.');
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function renderDbList() {
             const list = document.getElementById('db-list');
             list.innerHTML = '';
@@ -2269,13 +2528,23 @@ What is speed? -!- Distance over time'></textarea>
             
             if (window.firebaseReady) {
                 clearInterval(firebaseCheckInterval);
+                console.log('✅ Firebase ready, loading cloud data...');
                 loadFromCloud();
-            } else if (firebaseCheckAttempts > 10) {
-                // After 10 attempts (5 seconds), give up and use offline mode
+            } else if (firebaseCheckAttempts > 20) {
+                // After 20 attempts (10 seconds), give up and use offline mode
                 clearInterval(firebaseCheckInterval);
                 console.log('⚠️ Firebase initialization timeout, working in offline mode');
                 syncDot.className = 'sync-status-dot offline';
                 syncHelp.textContent = "Offline mode - data stored locally";
+                showDiagnostic(`
+                    <strong>Firebase Not Loading</strong><br><br>
+                    The app is working in offline mode. Your data is safe locally.<br><br>
+                    Possible causes:<br>
+                    • Slow network connection<br>
+                    • Firebaseapp.com is blocked<br>
+                    • Invalid Firebase configuration<br><br>
+                    Check the browser console for more details.
+                `);
             }
         }, 500);
 
