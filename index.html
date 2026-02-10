@@ -8,10 +8,10 @@
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash</title>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK — Manual Push/Pull only -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence }
+        import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence }
             from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -27,12 +27,12 @@
             const app = initializeApp(firebaseConfig);
             const db  = getFirestore(app);
             enableIndexedDbPersistence(db).catch(() => {});
-            window.firebaseDB         = db;
-            window.firebaseDoc        = doc;
-            window.firebaseSetDoc     = setDoc;
-            window.firebaseOnSnapshot = onSnapshot;
-            window.firebaseReady      = true;
-            console.log('✅ Firebase ready');
+            window.firebaseDB     = db;
+            window.firebaseDoc    = doc;
+            window.firebaseSetDoc = setDoc;
+            window.firebaseGetDoc = getDoc;
+            window.firebaseReady  = true;
+            console.log('✅ Firebase ready (Manual Mode)');
         } catch (e) {
             console.error('❌ Firebase init failed:', e);
             window.firebaseReady = false;
@@ -105,11 +105,7 @@
 
         .device-id{font-size:.65rem;color:var(--dimmer);margin-top:8px;text-align:center;font-family:monospace;padding:6px;background:rgba(0,0,0,.3);border-radius:4px;word-break:break-all;}
         .sync-help{font-size:.65rem;color:var(--dimmer);text-align:center;margin-top:6px;line-height:1.3;}
-        .rt-badge{display:inline-flex;align-items:center;gap:4px;font-size:.6rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:4px;justify-content:center;width:100%;color:var(--ok);}
-        .rt-badge .rt-dot{width:5px;height:5px;border-radius:50%;background:var(--ok);animation:dotPulse 1.5s infinite;}
-        .rt-badge.off{color:var(--dimmer);}
-        .rt-badge.off .rt-dot{background:var(--dimmer);animation:none;}
-
+        
         .add-btn{padding:12px;border:1px dashed var(--border-b);text-align:center;margin:8px 8px 12px;cursor:pointer;color:var(--dim);border-radius:8px;font-size:.85rem;font-weight:600;letter-spacing:.5px;transition:all var(--tf);text-transform:uppercase;}
         .add-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(255,255,255,.03);}
 
@@ -212,7 +208,7 @@
 <aside id="sidebar">
     <div class="sb-head">
         <div class="sb-title">MonoFlash</div>
-        <div class="sb-sub">📦 Cards sync in real-time<br>📊 Progress stays local</div>
+        <div class="sb-sub">📦 Cards sync manual<br>📊 Progress stays local</div>
     </div>
     <div class="sb-content" id="subject-list"></div>
     <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
@@ -226,7 +222,7 @@
                         stroke-dasharray="56.55" stroke-dashoffset="56.55"/>
                 </svg>
             </div>
-            <span id="sync-text">Sync Now</span>
+            <span id="sync-text">Push to Cloud</span>
         </button>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
             <button class="sync-btn" style="margin-bottom:0;flex:1;" onclick="readDatabase()">
@@ -234,12 +230,8 @@
             </button>
             <button class="sync-btn" style="margin-bottom:0;width:48px;flex:none;font-size:1.2rem;padding:12px 0;" onclick="changeSyncId()" title="Change Device ID">🔗</button>
         </div>
-        <div class="rt-badge off" id="rt-badge">
-            <span class="rt-dot"></span>
-            <span id="rt-label">Real-time: off</span>
-        </div>
         <div class="device-id">ID: <span id="current-device-id">…</span></div>
-        <div class="sync-help" id="sync-help">Connecting…</div>
+        <div class="sync-help" id="sync-help">Offline mode</div>
     </div>
 </aside>
 
@@ -327,8 +319,6 @@ var pringEl    = document.getElementById('pring');
 var pringFill  = document.getElementById('pring-fill');
 var syncTextEl = document.getElementById('sync-text');
 var syncHelpEl = document.getElementById('sync-help');
-var rtBadgeEl  = document.getElementById('rt-badge');
-var rtLabelEl  = document.getElementById('rt-label');
 
 function setDot(state) {
     dotEl.className = 'dot ' + state;
@@ -336,15 +326,6 @@ function setDot(state) {
 }
 function setRing(pct) {
     pringFill.style.strokeDashoffset = CIRC * (1 - pct / 100);
-}
-function setSyncUI(state, text, help) {
-    setDot(state);
-    if (text !== undefined) syncTextEl.textContent = text;
-    if (help !== undefined) syncHelpEl.textContent = help;
-}
-function setRealtime(on) {
-    rtBadgeEl.className = 'rt-badge' + (on ? '' : ' off');
-    rtLabelEl.textContent = on ? 'Real-time: live' : 'Real-time: off';
 }
 
 // ── DATA ───────────────────────────────────────────────────────────────
@@ -357,75 +338,14 @@ var CARDS_PER_CONTAINER = 20;
 var currentContainer = 'all', reviewMissedMode = false;
 var missedCardsThisSession = new Set();
 
-// ── FIREBASE REAL-TIME ─────────────────────────────────────────────────
-var unsubLive = null;
-var isSyncing = false;
-
-function startRealtimeSync() {
-    if (!window.firebaseReady || !window.firebaseDB) {
-        setSyncUI('offline', 'Sync Now', 'Offline — data saved locally');
-        setRealtime(false);
-        return;
-    }
-    if (unsubLive) unsubLive();
-
-    setDot('syncing'); setRing(20);
-    syncTextEl.textContent = 'Connecting…';
-    syncHelpEl.textContent = 'Establishing real-time link…';
-
-    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-
-    // FIXED LOGIC: Ignore local echo via metadata, ignore clock skew
-    unsubLive = window.firebaseOnSnapshot(docRef, { includeMetadataChanges: true },
-        function(snap) {
-            // 1. If this is a local write (latency compensation), ignore it to avoid loops
-            if (snap.metadata.hasPendingWrites) {
-                return; 
-            }
-
-            setRing(100); setDot('online'); setRealtime(true);
-            syncTextEl.textContent = 'Sync Now';
-
-            if (snap.exists()) {
-                var cloud = snap.data();
-                var cloudContent = cloud.cardContent;
-
-                // 2. Clock-agnostic check: Only update if data is actually different
-                if (JSON.stringify(cardContent) !== JSON.stringify(cloudContent)) {
-                    cardContent = cloudContent;
-                    saveLocal(); // Save to localStorage
-                    renderSidebar();
-                    loadSidebarState();
-                    if (currentSubject && currentSub) {
-                        // If we are currently studying a topic that got updated, reload it
-                        // to show the new cards immediately
-                        loadTopic(currentSubject, currentSub);
-                    }
-                    syncHelpEl.textContent = '⬇ Updated from cloud';
-                    console.log('📥 Pulled change from cloud');
-                } else {
-                    syncHelpEl.textContent = '✓ Up to date';
-                }
-            } else {
-                syncHelpEl.textContent = 'New ID — pushing local data…';
-                pushToCloud();
-            }
-        },
-        function(err) {
-            console.error('onSnapshot error:', err.code, err.message);
-            setRealtime(false);
-            setSyncUI(err.code === 'unavailable' ? 'offline' : 'error',
-                      'Sync Now',
-                      err.code === 'unavailable' ? 'No internet. Working offline.' : 'Error: ' + err.code);
-        }
-    );
-}
-
+// ── MANUAL SYNC ────────────────────────────────────────────────────────
+// 1. PUSH
 function pushToCloud() {
-    if (!window.firebaseReady || !window.firebaseDB || isSyncing) return;
-    isSyncing = true;
-    setDot('syncing'); setRing(10);
-    syncTextEl.textContent = 'Syncing…';
+    if (!window.firebaseReady || !window.firebaseDB) { alert("Firebase offline"); return; }
+    
+    setDot('syncing'); setRing(20);
+    syncTextEl.textContent = 'Pushing...';
+    syncHelpEl.textContent = 'Uploading local data...';
 
     var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
     setRing(50);
@@ -437,77 +357,76 @@ function pushToCloud() {
     }, { merge: true })
     .then(function() {
         setRing(100); setDot('online');
-        syncTextEl.textContent = 'Sync Now';
-        syncHelpEl.textContent = '⬆ Synced to cloud';
-        console.log('✅ Pushed to cloud');
-        setTimeout(function() {
-            if (syncHelpEl.textContent === '⬆ Synced to cloud') syncHelpEl.textContent = '✓ Up to date';
-        }, 3000);
+        syncTextEl.textContent = 'Push to Cloud';
+        syncHelpEl.textContent = '✅ Uploaded successfully';
+        setTimeout(function() { setDot('offline'); }, 2000);
     })
     .catch(function(err) {
         console.error('Push failed:', err.code, err.message);
-        setDot(err.code === 'unavailable' ? 'offline' : 'error');
-        syncTextEl.textContent = 'Sync Now';
-        syncHelpEl.textContent = err.code === 'unavailable' ? 'No internet. Saved locally.' : 'Push failed: ' + err.code;
-    })
-    .finally(function() { isSyncing = false; });
+        setDot('error');
+        syncHelpEl.textContent = 'Upload failed: ' + err.code;
+    });
 }
 
 function manualSync() { pushToCloud(); }
 
-function readDatabase() {
+// 2. READ (DELETE -> DOWNLOAD -> SHOW)
+async function readDatabase() {
     if (!window.firebaseReady || !window.firebaseDB) {
-        syncHelpEl.textContent = 'Offline — cannot read cloud.';
+        alert('Offline — cannot read cloud.');
         return;
     }
-    var readTextEl = document.getElementById('read-text');
-    readTextEl.textContent = '⏳ Reading…';
+    
+    var btn = document.getElementById('read-text');
+    var help = document.getElementById('sync-help');
+    
+    btn.textContent = '⏳ Downloading...';
+    help.textContent = 'Deleting local & fetching...';
+    setDot('syncing'); setRing(20);
 
-    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-    window.firebaseOnSnapshot(docRef, { includeMetadataChanges: false },
-        function(snap) {
-            if (snap.exists()) {
-                var cloud = snap.data();
-                var cloudContent = cloud.cardContent;
+    try {
+        // STEP 1: DELETE LOCAL (Clear memory)
+        cardContent = {};
+        
+        // STEP 2: DOWNLOAD
+        var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+        var snap = await window.firebaseGetDoc(docRef);
+        setRing(70);
 
-                if (JSON.stringify(cardContent) !== JSON.stringify(cloudContent)) {
-                    cardContent = cloudContent;
-                    saveLocal();
-                    renderSidebar();
-                    loadSidebarState();
-                    syncHelpEl.textContent = '⬇ Updated from cloud!';
-                    readTextEl.textContent = '✓ Updated!';
-                } else {
-                    syncHelpEl.textContent = '✓ Already up to date';
-                    readTextEl.textContent = '✓ Up to date';
-                }
-            } else {
-                syncHelpEl.textContent = 'No cloud data found.';
-                readTextEl.textContent = '📖 Read Database';
-            }
-            setTimeout(function() { readTextEl.textContent = '📖 Read Database'; }, 3000);
-        },
-        function(err) {
-            console.error('Read error:', err);
-            syncHelpEl.textContent = 'Read failed: ' + err.code;
-            readTextEl.textContent = '📖 Read Database';
+        if (snap.exists()) {
+            var cloud = snap.data();
+            
+            // STEP 3: SHOW NEW
+            cardContent = cloud.cardContent || {};
+            saveLocal(); // Persist to storage
+            
+            // Reset UI to reflect new data
+            renderSidebar();
+            loadSidebarState();
+            currentSubject = null; currentSub = null;
+            document.getElementById('header-title').textContent = 'Select a Subject';
+            renderCard();
+
+            btn.textContent = '✅ Done';
+            help.textContent = 'Data replaced from cloud';
+            setRing(100); setDot('online');
+        } else {
+            help.textContent = 'No cloud data found';
+            btn.textContent = '❌ Empty';
+            setDot('offline');
         }
-    );
-}
-
-// Wait for Firebase, then start real-time listener
-var fbChecks = 0;
-var fbTimer = setInterval(function() {
-    fbChecks++;
-    if (window.firebaseReady) {
-        clearInterval(fbTimer);
-        startRealtimeSync();
-    } else if (fbChecks > 40) {
-        clearInterval(fbTimer);
-        setSyncUI('offline', 'Sync Now', 'Offline — data saved locally');
-        setRealtime(false);
+    } catch(err) {
+        console.error('Read error:', err);
+        help.textContent = 'Error: ' + err.message;
+        btn.textContent = '❌ Error';
+        setDot('error');
     }
-}, 500);
+
+    setTimeout(function() { 
+        btn.textContent = '📖 Read Database'; 
+        if(dotEl.className.includes('online')) setDot('offline');
+    }, 2000);
+}
 
 // ── SRS ────────────────────────────────────────────────────────────────
 function createSRS() { return {interval:0,easiness:2.5,repetitions:0,nextReview:Date.now(),lastReviewed:null}; }
@@ -540,7 +459,7 @@ function saveLocal() {
     localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
     localStorage.setItem('monoFlashSRSData',     JSON.stringify(srsData));
 }
-function saveData() { saveLocal(); pushToCloud(); }   // save + push
+function saveData() { saveLocal(); }  // Removed automatic pushToCloud
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────
 function renderSidebar() {
