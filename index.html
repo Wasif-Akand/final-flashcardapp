@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash</title>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK — Manual Push/Pull only -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence }
@@ -23,36 +23,20 @@
             appId: "1:975345059409:web:fb9048868da5afe6f45a70"
         };
 
-        async function initFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                const db  = getFirestore(app);
-                
-                try {
-                    await enableIndexedDbPersistence(db);
-                } catch (err) {
-                    console.warn("Persistence failed:", err.code);
-                }
-
-                window.firebaseDB     = db;
-                window.firebaseDoc    = doc;
-                window.firebaseSetDoc = setDoc;
-                window.firebaseGetDoc = getDoc;
-                window.firebaseReady  = true;
-                
-                const dot = document.getElementById('sync-dot');
-                if (dot) dot.className = 'dot offline';
-                console.log('✅ Firebase ready');
-            } catch (e) {
-                console.error('❌ Firebase init failed:', e);
-                window.firebaseReady = false;
-                const help = document.getElementById('sync-help');
-                if (help) help.textContent = "Init Error: Tap to Retry";
-            }
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db  = getFirestore(app);
+            enableIndexedDbPersistence(db).catch(() => {});
+            window.firebaseDB     = db;
+            window.firebaseDoc    = doc;
+            window.firebaseSetDoc = setDoc;
+            window.firebaseGetDoc = getDoc;
+            window.firebaseReady  = true;
+            console.log('✅ Firebase ready (Manual Mode)');
+        } catch (e) {
+            console.error('❌ Firebase init failed:', e);
+            window.firebaseReady = false;
         }
-
-        initFirebase();
-        window.retryFirebase = initFirebase;
     </script>
 
     <style>
@@ -72,38 +56,47 @@
         /* SIDEBAR */
         #sidebar{width:280px;background:var(--surface);border-right:1px solid var(--border-b);display:flex;flex-direction:column;position:fixed;left:-280px;top:0;bottom:0;transition:left var(--tn),box-shadow var(--tn);z-index:1000;box-shadow:var(--sh-xl);}
         #sidebar.open{left:0;}
-        .sb-head{padding:24px 20px;border-bottom:1px solid var(--border-b);background:linear-gradient(180deg,var(--surface-el) 0%,var(--surface) 100%); position: relative;}
-        .sb-title{font-size:1.4rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-        .version-tag{position:absolute; top: 10px; right: 20px; font-size: 0.6rem; color: var(--dimmer); font-family: monospace;}
-        .branding{font-size: 0.85rem; color: var(--accent); font-weight: 300; letter-spacing: 1px; margin-top: 4px; opacity: 0.8;}
-        
+        .sb-head{padding:24px 20px;border-bottom:1px solid var(--border-b);background:linear-gradient(180deg,var(--surface-el) 0%,var(--surface) 100%);}
+        .sb-title{font-size:1.4rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .sb-sub{font-size:.7rem;color:var(--dim);line-height:1.4;}
         .sb-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 8px;}
         .sb-content::-webkit-scrollbar{width:4px;}
         .sb-content::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
 
         .subject-item{margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface-el);transition:all var(--tf);}
+        .subject-item:hover{border-color:var(--border-b);box-shadow:var(--sh-sm);}
         .subject-title{font-weight:700;padding:14px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;transition:all var(--tf);user-select:none;}
         .subject-title:hover{background:rgba(255,255,255,.03);}
+        .subject-actions{display:flex;gap:8px;align-items:center;}
         .chevron{font-size:.7rem;transition:transform var(--tn);color:var(--dim);}
         .subject-item.expanded .chevron{transform:rotate(180deg);}
+        .del-icon{font-size:1.2rem;color:var(--dimmer);transition:color var(--tf);padding:4px;cursor:pointer;}
+        .del-icon:hover{color:var(--err);}
         .sub-list{border-left:2px solid var(--border-b);margin-left:12px;display:none;background:rgba(0,0,0,.3);}
         .sub-list.show{display:block;animation:slideDown var(--tn);}
         @keyframes slideDown{from{opacity:0;max-height:0}to{opacity:1;max-height:500px}}
         .sub-item{padding:12px 16px;color:var(--dim);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.85rem;transition:all var(--tf);border-bottom:1px solid rgba(255,255,255,.02);position:relative;}
+        .sub-item:last-child{border-bottom:none;}
+        .sub-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);transform:scaleY(0);transition:transform var(--tf);}
         .sub-item:hover,.sub-item.active{color:var(--text);background:rgba(255,255,255,.05);padding-left:20px;}
+        .sub-item:hover::before,.sub-item.active::before{transform:scaleY(1);}
         .sub-item.active{background:rgba(255,255,255,.08);font-weight:600;}
+        .card-count{font-size:.7rem;color:var(--dimmer);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:12px;font-weight:600;min-width:32px;text-align:center;}
 
         /* SYNC PANEL */
         .sync-panel{padding:12px;border-top:1px solid var(--border-b);background:var(--surface-el);box-shadow:0 -4px 16px rgba(0,0,0,.5);}
         .sync-btn{width:100%;padding:12px;background:var(--surface);color:#fff;border:1px solid var(--border-b);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;font-size:.85rem;font-weight:600;letter-spacing:.5px;transition:all var(--tf);text-transform:uppercase;}
         .sync-btn:hover{background:var(--surface-el);border-color:var(--accent);box-shadow:var(--sh-sm);transform:translateY(-1px);}
+        .sync-btn:active{transform:translateY(0);}
 
+        /* Progress dot / ring */
         .dot-wrap{width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
         .dot{width:10px;height:10px;border-radius:50%;background:var(--dim);transition:background var(--tf),box-shadow var(--tf);}
-        .dot.online {background:var(--ok); box-shadow:0 0 8px var(--ok);}
+        .dot.online {background:var(--ok); box-shadow:0 0 8px var(--ok),0 0 16px rgba(46,204,113,.3);animation:dotPulse 2s infinite;}
         .dot.offline{background:var(--warn);box-shadow:0 0 8px var(--warn);}
         .dot.error  {background:var(--err); box-shadow:0 0 8px var(--err);}
         .dot.syncing{display:none;}
+        @keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.9)}}
 
         .pring{position:absolute;inset:0;width:24px;height:24px;display:none;}
         .pring.show{display:block;}
@@ -111,7 +104,7 @@
         .pring-fill {fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset .35s ease;}
 
         .device-id{font-size:.65rem;color:var(--dimmer);margin-top:8px;text-align:center;font-family:monospace;padding:6px;background:rgba(0,0,0,.3);border-radius:4px;word-break:break-all;}
-        .sync-help{font-size:.65rem;color:var(--dimmer);text-align:center;margin-top:6px;line-height:1.3;cursor:pointer;}
+        .sync-help{font-size:.65rem;color:var(--dimmer);text-align:center;margin-top:6px;line-height:1.3;}
         
         .add-btn{padding:12px;border:1px dashed var(--border-b);text-align:center;margin:8px 8px 12px;cursor:pointer;color:var(--dim);border-radius:8px;font-size:.85rem;font-weight:600;letter-spacing:.5px;transition:all var(--tf);text-transform:uppercase;}
         .add-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(255,255,255,.03);}
@@ -120,8 +113,12 @@
         #main{flex:1;display:flex;flex-direction:column;position:relative;width:100%;}
         header{padding:16px 20px;border-bottom:1px solid var(--border-b);display:flex;align-items:center;gap:16px;background:var(--surface);box-shadow:var(--sh-md);position:relative;z-index:10;}
         .menu-btn{font-size:1.5rem;cursor:pointer;color:var(--text);transition:all var(--tf);padding:8px;margin:-8px;user-select:none;}
+        .menu-btn:hover{transform:scale(1.1);}
+        .menu-btn:active{transform:scale(.95);}
         #header-title{font-size:1rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         #content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;position:relative;}
+        #content-area::-webkit-scrollbar{width:6px;}
+        #content-area::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:3px;}
         .tab-view{display:none;height:100%;animation:fadeIn var(--tn);}
         .tab-view.active{display:flex;flex-direction:column;}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -129,25 +126,79 @@
         /* FLASHCARD */
         .card-container{flex:1;display:flex;justify-content:center;align-items:center;perspective:1600px;padding:20px 0;}
         .card{width:100%;max-width:380px;height:280px;position:relative;transform-style:preserve-3d;transition:transform var(--ts),box-shadow var(--tn);cursor:pointer;box-shadow:var(--sh-lg);}
+        .card:hover{box-shadow:var(--sh-xl);}
         .card.flipped{transform:rotateY(180deg);}
-        .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;display:flex;justify-content:center;align-items:center;text-align:center;border:2px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:32px 24px;font-size:1.3rem;font-weight:500;line-height:1.5;overflow-y:auto;}
-        .card-back{transform:rotateY(180deg);background:#050505;border-color:var(--accent);}
+        .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;display:flex;justify-content:center;align-items:center;text-align:center;border:2px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:32px 24px;font-size:1.3rem;font-weight:500;line-height:1.5;box-shadow:inset 0 2px 8px rgba(0,0,0,.5);overflow-y:auto;}
+        .card-face::-webkit-scrollbar{width:4px;}
+        .card-face::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
+        .card-back{transform:rotateY(180deg);background:#050505;border-color:var(--accent);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),0 0 24px rgba(255,255,255,.1);}
         .controls{display:flex;gap:12px;justify-content:center;margin-top:24px;padding:0 20px;}
-        .btn{padding:14px 28px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all var(--tf);font-size:.95rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;user-select:none;}
-        .btn-primary{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border:none;}
+        .btn{padding:14px 28px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all var(--tf);font-size:.95rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;}
+        .btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:var(--sh-md);border-color:var(--accent);}
+        .btn:active{transform:translateY(0);}
+        .btn-primary{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border:none;box-shadow:var(--sh-md);}
+        .btn-primary:hover{background:linear-gradient(135deg,#f5f5f5 0%,#bbb 100%);box-shadow:var(--sh-lg);}
+        :focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
+
+        /* CONTAINERS */
+        .cont-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:10px;border:1px solid var(--border-b);border-radius:10px;background:var(--surface-el);box-shadow:inset 0 2px 4px rgba(0,0,0,.3);}
+        .cont-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--dim);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.5px;transition:all var(--tf);white-space:nowrap;text-transform:uppercase;user-select:none;}
+        .cont-btn:hover{background:var(--surface-el);color:var(--text);border-color:var(--border-b);transform:translateY(-1px);}
+        .cont-btn.active{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border-color:var(--accent);}
+        .cont-info{font-size:.7rem;color:var(--dimmer);margin-top:8px;width:100%;text-align:center;}
+
+        /* STATS */
+        .stat-box{border:1px solid var(--border-b);padding:24px;margin-bottom:12px;border-radius:12px;text-align:center;background:var(--surface-el);box-shadow:var(--sh-sm);transition:all var(--tf);}
+        .stat-box:hover{box-shadow:var(--sh-md);transform:translateY(-2px);}
+        .stat-box.hi{border-color:var(--accent);box-shadow:0 0 16px rgba(255,255,255,.1);}
+        .stat-num{font-size:2.5rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .stat-label{color:var(--dim);font-size:.85rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+        .cont-stat{border:1px solid var(--border);padding:16px;margin-bottom:8px;border-radius:10px;background:var(--surface-el);}
+        .cont-stat-h{font-weight:700;margin-bottom:8px;font-size:.9rem;}
+        .cont-stat-d{color:var(--dim);font-size:.85rem;}
+
+        /* DATABASE */
+        textarea{width:100%;min-height:120px;background:var(--surface-el);color:var(--text);border:1px solid var(--border-b);padding:14px;margin-bottom:12px;border-radius:10px;font-family:'Courier New',monospace;font-size:.85rem;resize:vertical;transition:all var(--tf);line-height:1.6;}
+        textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,255,255,.1);}
+        textarea::placeholder{color:var(--dimmer);}
+        .db-sec-title{font-size:1.1rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border-b);}
+        .db-sub{color:var(--dim);font-size:.75rem;margin-bottom:12px;line-height:1.4;}
+        .db-btn-group{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+        .db-btn-group .btn{flex:1;min-width:120px;padding:12px 20px;font-size:.8rem;}
+        .db-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;margin-top:32px;}
+        .db-list-head h3{margin:0;font-size:1.1rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+        .db-item{padding:16px;border:1px solid var(--border);background:var(--surface-el);margin-bottom:8px;border-radius:10px;display:flex;justify-content:space-between;gap:12px;transition:all var(--tf);}
+        .db-item:hover{border-color:var(--border-b);box-shadow:var(--sh-sm);}
+        .db-item-content{flex:1;min-width:0;}
+        .db-key{font-weight:700;margin-bottom:6px;word-wrap:break-word;font-size:.9rem;}
+        .db-val{color:var(--dim);font-size:.85rem;word-wrap:break-word;line-height:1.4;}
 
         /* NAV */
         nav{display:flex;border-top:1px solid var(--border-b);padding-bottom:env(safe-area-inset-bottom);background:var(--surface);box-shadow:0 -4px 16px rgba(0,0,0,.5);position:relative;z-index:10;}
         .nav-item{flex:1;padding:16px 12px;text-align:center;color:var(--dim);cursor:pointer;font-size:.8rem;font-weight:700;letter-spacing:1px;transition:all var(--tf);text-transform:uppercase;user-select:none;position:relative;}
+        .nav-item::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%) scaleX(0);width:60%;height:2px;background:var(--accent);transition:transform var(--tn);}
+        .nav-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
         .nav-item.active{color:#fff;background:rgba(255,255,255,.05);}
+        .nav-item.active::before{transform:translateX(-50%) scaleX(1);}
 
+        /* OVERLAY */
         #overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);z-index:900;display:none;}
-        #overlay.show{display:block;}
+        #overlay.show{display:block;animation:fadeIn var(--tn);}
 
+        /* RESPONSIVE */
         @media(max-width:480px){
             #sidebar{width:260px;left:-260px;}
             .card{max-width:100%;height:240px;}
+            .card-face{font-size:1.1rem;padding:24px 20px;}
+            .controls{gap:10px;margin-top:16px;padding:0 12px;}
+            .btn{flex:1;padding:12px 20px;font-size:.8rem;max-width:160px;}
+            .db-btn-group{flex-direction:column;}
+            .db-btn-group .btn{width:100%;}
+            nav{padding-bottom:max(env(safe-area-inset-bottom),8px);}
+            .nav-item{padding:14px 8px;font-size:.7rem;}
         }
+        @media(max-width:375px){.card{height:220px;}.card-face{font-size:1rem;padding:20px 16px;}.stat-num{font-size:1.8rem;}}
+        @media(max-height:500px) and (orientation:landscape){.card{height:180px;max-width:320px;}.card-face{font-size:.95rem;padding:16px;}.controls{margin-top:12px;}}
     </style>
 </head>
 <body>
@@ -156,9 +207,8 @@
 
 <aside id="sidebar">
     <div class="sb-head">
-        <div class="version-tag">v1.0.1</div>
         <div class="sb-title">MonoFlash</div>
-        <div class="branding">£Akand~</div>
+        <div class="sb-sub">📦 Cards sync manual<br>📊 Progress stays local</div>
     </div>
     <div class="sb-content" id="subject-list"></div>
     <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
@@ -178,10 +228,10 @@
             <button class="sync-btn" style="margin-bottom:0;flex:1;" onclick="readDatabase()">
                 <span id="read-text">📖 Read Database</span>
             </button>
-            <button class="sync-btn" style="margin-bottom:0;width:48px;flex:none;font-size:1.2rem;padding:12px 0;" onclick="changeSyncId()">🔗</button>
+            <button class="sync-btn" style="margin-bottom:0;width:48px;flex:none;font-size:1.2rem;padding:12px 0;" onclick="changeSyncId()" title="Change Device ID">🔗</button>
         </div>
         <div class="device-id">ID: <span id="current-device-id">…</span></div>
-        <div class="sync-help" id="sync-help" onclick="window.retryFirebase()">Ready (Tap to retry init)</div>
+        <div class="sync-help" id="sync-help">Offline mode</div>
     </div>
 </aside>
 
@@ -191,7 +241,9 @@
         <h1 id="header-title">Select a Subject</h1>
     </header>
     <section id="content-area">
+
         <div id="tab-flashcard" class="tab-view active">
+            <div class="cont-selector" id="cont-selector" style="display:none;"></div>
             <div class="card-container">
                 <div class="card" onclick="flipCard()" id="active-card">
                     <div class="card-face" id="card-front">Select a topic to begin</div>
@@ -203,6 +255,40 @@
                 <button class="btn btn-primary" onclick="nextCard(true)">Got it</button>
             </div>
         </div>
+
+        <div id="tab-performance" class="tab-view">
+            <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Cards Reviewed</div></div>
+            <div class="stat-box hi"><div class="stat-num" id="stat-score">0%</div><div class="stat-label">Accuracy</div></div>
+            <div class="stat-box"><div class="stat-num" id="stat-due">-</div><div class="stat-label">Cards Due Today</div></div>
+            <div class="stat-box"><div class="stat-num" id="stat-mastered">-</div><div class="stat-label">Mastered (7+ days)</div></div>
+            <div id="container-stats" style="margin-top:24px;"></div>
+        </div>
+
+        <div id="tab-database" class="tab-view">
+            <h3 class="db-sec-title">🌐 Full Backup / Restore</h3>
+            <p class="db-sub">Export or import ALL subjects, topics, and cards in one file</p>
+            <input id="full-backup-input" type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
+            <div class="db-btn-group">
+                <button class="btn btn-primary" onclick="exportFullBackup()">📦 Export ALL Data</button>
+                <button class="btn" onclick="document.getElementById('full-backup-input').click()">📥 Import ALL Data</button>
+            </div>
+            <h3 class="db-sec-title" style="margin-top:32px;">➕ Add Cards to Current Topic</h3>
+            <p class="db-sub">Format: Question -!- Answer (one per line)<br>OR JSON: [{"q":"Front","a":"Back"}]</p>
+            <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
+What is speed? -!- Distance over time'></textarea>
+            <input id="file-input" type="file" accept=".json" style="display:none" onchange="importJsonFile(event)">
+            <div class="db-btn-group">
+                <button class="btn btn-primary" onclick="importJson()">Import Data</button>
+                <button class="btn" onclick="exportJson()">Export JSON</button>
+                <button class="btn" onclick="document.getElementById('file-input').click()">Import File</button>
+            </div>
+            <div class="db-list-head">
+                <h3>Current Entries</h3>
+                <button class="btn" onclick="clearAllCards()" style="padding:8px 16px;font-size:.75rem;">Clear All</button>
+            </div>
+            <div id="db-list"></div>
+        </div>
+
     </section>
     <nav>
         <div class="nav-item active" onclick="switchTab('flashcard',this)">Cards</div>
@@ -212,14 +298,21 @@
 </main>
 
 <script>
+// ── DEVICE ID ──────────────────────────────────────────────────────────
 function getDeviceId() {
     let id = localStorage.getItem('monoFlashDeviceId');
-    if (!id) { id = 'device_' + Date.now(); localStorage.setItem('monoFlashDeviceId', id); }
+    if (!id) { id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2,9); localStorage.setItem('monoFlashDeviceId', id); }
     return id;
 }
 var DEVICE_ID = getDeviceId();
 document.getElementById('current-device-id').textContent = DEVICE_ID;
 
+function changeSyncId() {
+    var n = prompt('Enter a Sync Name (same on all devices):', DEVICE_ID);
+    if (n && n.trim()) { localStorage.setItem('monoFlashDeviceId', n.trim()); alert('Linked! Reloading…'); location.reload(); }
+}
+
+// ── SYNC UI ────────────────────────────────────────────────────────────
 var CIRC = 2 * Math.PI * 9;
 var dotEl      = document.getElementById('sync-dot');
 var pringEl    = document.getElementById('pring');
@@ -228,143 +321,515 @@ var syncTextEl = document.getElementById('sync-text');
 var syncHelpEl = document.getElementById('sync-help');
 
 function setDot(state) {
-    if(!dotEl) return;
     dotEl.className = 'dot ' + state;
     if (state === 'syncing') { pringEl.classList.add('show'); } else { pringEl.classList.remove('show'); }
 }
 function setRing(pct) {
-    if(!pringFill) return;
     pringFill.style.strokeDashoffset = CIRC * (1 - pct / 100);
 }
 
+// ── DATA ───────────────────────────────────────────────────────────────
 var cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent') || '{}');
+var srsData     = JSON.parse(localStorage.getItem('monoFlashSRSData')     || '{}');
 var currentSubject = null, currentSub = null;
-var cardIndex = 0;
-var shuffledCards = [];
+var cardIndex = 0, sessionStats = {total:0,correct:0};
+var shuffledCards = [], dueCards = [];
+var CARDS_PER_CONTAINER = 20;
+var currentContainer = 'all', reviewMissedMode = false;
+var missedCardsThisSession = new Set();
 
-function saveLocal() {
-    localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
+// ── MANUAL SYNC ────────────────────────────────────────────────────────
+// 1. PUSH
+function pushToCloud() {
+    if (!window.firebaseReady || !window.firebaseDB) { alert("Firebase offline"); return; }
+    
+    setDot('syncing'); setRing(20);
+    syncTextEl.textContent = 'Pushing...';
+    syncHelpEl.textContent = 'Uploading local data...';
+
+    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+    setRing(50);
+
+    window.firebaseSetDoc(docRef, {
+        cardContent: cardContent,
+        lastSync:    Date.now(),
+        deviceId:    DEVICE_ID
+    }, { merge: true })
+    .then(function() {
+        setRing(100); setDot('online');
+        syncTextEl.textContent = 'Push to Cloud';
+        syncHelpEl.textContent = '✅ Uploaded successfully';
+        setTimeout(function() { setDot('offline'); }, 2000);
+    })
+    .catch(function(err) {
+        console.error('Push failed:', err.code, err.message);
+        setDot('error');
+        syncHelpEl.textContent = 'Upload failed: ' + err.code;
+    });
 }
 
+function manualSync() { pushToCloud(); }
+
+// 2. READ (DELETE -> DOWNLOAD -> SHOW)
 async function readDatabase() {
-    if (!window.firebaseReady) {
-        syncHelpEl.textContent = "Attempting Reconnect...";
-        await window.retryFirebase(); 
-        if(!window.firebaseReady) {
-            alert('Cloud unavailable. Check connection.');
-            return;
-        }
+    if (!window.firebaseReady || !window.firebaseDB) {
+        alert('Offline — cannot read cloud.');
+        return;
     }
     
     var btn = document.getElementById('read-text');
-    btn.textContent = '⏳ Syncing...';
-    setDot('syncing'); setRing(30);
+    var help = document.getElementById('sync-help');
+    
+    btn.textContent = '⏳ Downloading...';
+    help.textContent = 'Deleting local & fetching...';
+    setDot('syncing'); setRing(20);
 
     try {
+        // STEP 1: DELETE LOCAL (Clear memory)
+        cardContent = {};
+        
+        // STEP 2: DOWNLOAD
         var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
         var snap = await window.firebaseGetDoc(docRef);
         setRing(70);
 
         if (snap.exists()) {
             var cloud = snap.data();
+            
+            // STEP 3: SHOW NEW
             cardContent = cloud.cardContent || {};
-            saveLocal();
+            saveLocal(); // Persist to storage
+            
+            // Reset UI to reflect new data
             renderSidebar();
-            btn.textContent = '✅ Updated';
+            loadSidebarState();
+            currentSubject = null; currentSub = null;
+            document.getElementById('header-title').textContent = 'Select a Subject';
+            renderCard();
+
+            btn.textContent = '✅ Done';
+            help.textContent = 'Data replaced from cloud';
             setRing(100); setDot('online');
         } else {
-            btn.textContent = '❓ Empty';
+            help.textContent = 'No cloud data found';
+            btn.textContent = '❌ Empty';
             setDot('offline');
         }
     } catch(err) {
+        console.error('Read error:', err);
+        help.textContent = 'Error: ' + err.message;
         btn.textContent = '❌ Error';
         setDot('error');
     }
 
-    setTimeout(() => { btn.textContent = '📖 Read Database'; setDot('offline'); }, 2000);
+    setTimeout(function() { 
+        btn.textContent = '📖 Read Database'; 
+        if(dotEl.className.includes('online')) setDot('offline');
+    }, 2000);
 }
 
-function manualSync() {
-    if (!window.firebaseReady) { alert("Offline. Tap help to retry."); return; }
-    setDot('syncing'); setRing(20);
-    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-    window.firebaseSetDoc(docRef, { cardContent: cardContent, lastSync: Date.now(), deviceId: DEVICE_ID }, { merge: true })
-    .then(() => { setRing(100); setDot('online'); setTimeout(()=>setDot('offline'),2000); })
-    .catch(e => { setDot('error'); });
+// ── SRS ────────────────────────────────────────────────────────────────
+function createSRS() { return {interval:0,easiness:2.5,repetitions:0,nextReview:Date.now(),lastReviewed:null}; }
+function updateSRS(s, q) {
+    s.lastReviewed = Date.now();
+    if (q === 0) { s.repetitions = 0; s.interval = 1; }
+    else {
+        s.repetitions++;
+        s.interval = s.repetitions === 1 ? 1 : s.repetitions === 2 ? 6 : Math.round(s.interval * s.easiness);
+        s.easiness = Math.max(1.3, s.easiness + 0.1 - (1 - q) * 0.2);
+    }
+    s.nextReview = Date.now() + s.interval * 86400000;
+    return s;
+}
+function isDue(s) { return !s || !s.nextReview || Date.now() >= s.nextReview; }
+function ensureSRS() {
+    for (var subj in cardContent) {
+        if (!srsData[subj]) srsData[subj] = {};
+        for (var sub in cardContent[subj]) {
+            if (!srsData[subj][sub]) srsData[subj][sub] = [];
+            var need = cardContent[subj][sub].length - srsData[subj][sub].length;
+            for (var i = 0; i < need; i++) srsData[subj][sub].push(createSRS());
+        }
+    }
 }
 
+// ── SAVE ───────────────────────────────────────────────────────────────
+function saveLocal() {
+    ensureSRS();
+    localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
+    localStorage.setItem('monoFlashSRSData',     JSON.stringify(srsData));
+}
+function saveData() { saveLocal(); }  // Removed automatic pushToCloud
+
+// ── SIDEBAR ────────────────────────────────────────────────────────────
 function renderSidebar() {
     var list = document.getElementById('subject-list');
     list.innerHTML = '';
     for (var subj in cardContent) {
-        let s = subj;
-        var item = document.createElement('div'); item.className = 'subject-item';
-        item.innerHTML = `<div class="subject-title" onclick="toggleSubject('${s}')"><span>${s}</span><span class="chevron">▼</span></div>`;
-        var subList = document.createElement('div'); subList.className = 'sub-list';
-        subList.id = 'sub-' + s.replace(/\s+/g, '-');
-        for (var sub in cardContent[s]) {
-            let topic = sub;
-            var si = document.createElement('div'); si.className = 'sub-item';
-            si.innerHTML = `<span>${topic}</span>`;
-            si.onclick = () => loadTopic(s, topic);
-            subList.appendChild(si);
-        }
-        item.appendChild(subList);
-        list.appendChild(item);
+        (function(subj){
+            var item = document.createElement('div'); item.className = 'subject-item';
+            var title = document.createElement('div'); title.className = 'subject-title';
+            var ttxt = document.createElement('span'); ttxt.textContent = subj;
+            ttxt.onclick = function(){ toggleSubject(subj); };
+            title.appendChild(ttxt);
+            var actions = document.createElement('div'); actions.className = 'subject-actions';
+            var chev = document.createElement('span'); chev.className = 'chevron'; chev.textContent = '▼';
+            chev.onclick = function(){ toggleSubject(subj); };
+            actions.appendChild(chev);
+            var del = document.createElement('span'); del.className = 'del-icon'; del.textContent = '×';
+            del.onclick = function(e){ e.stopPropagation(); deleteSubject(subj); };
+            actions.appendChild(del);
+            title.appendChild(actions); item.appendChild(title);
+
+            var subList = document.createElement('div'); subList.className = 'sub-list';
+            subList.id = 'sub-' + safeId(subj);
+            for (var sub in cardContent[subj]) {
+                (function(sub){
+                    var si = document.createElement('div'); si.className = 'sub-item';
+                    var stxt = document.createElement('span');
+                    stxt.innerHTML = sub + ' <span class="card-count">' + cardContent[subj][sub].length + '</span>';
+                    stxt.onclick = function(){ loadTopic(subj, sub); };
+                    si.appendChild(stxt);
+                    var sdel = document.createElement('span'); sdel.className = 'del-icon'; sdel.textContent = '×';
+                    sdel.onclick = function(e){ e.stopPropagation(); deleteSub(subj, sub); };
+                    si.appendChild(sdel);
+                    subList.appendChild(si);
+                })(sub);
+            }
+            var addTopicBtn = document.createElement('div'); addTopicBtn.className = 'add-btn';
+            addTopicBtn.textContent = '+ Add Topic'; addTopicBtn.style.margin = '8px';
+            addTopicBtn.onclick = function(){ addNewSub(subj); };
+            subList.appendChild(addTopicBtn);
+            item.appendChild(subList); list.appendChild(item);
+        })(subj);
     }
 }
+function toggleSubject(subj) {
+    var el = document.getElementById('sub-' + safeId(subj));
+    if (!el) return;
+    el.classList.toggle('show'); el.parentElement.classList.toggle('expanded');
+    saveSidebarState();
+}
+function saveSidebarState() {
+    var open = [];
+    document.querySelectorAll('.sub-list.show').forEach(function(el){ open.push(el.id.replace('sub-','')); });
+    localStorage.setItem('monoFlashSidebarState', JSON.stringify(open));
+}
+function loadSidebarState() {
+    try {
+        var saved = JSON.parse(localStorage.getItem('monoFlashSidebarState') || '[]');
+        saved.forEach(function(id){
+            var el = document.getElementById('sub-' + id);
+            if (el) { el.classList.add('show'); el.parentElement.classList.add('expanded'); }
+        });
+    } catch(e) {}
+}
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+}
+function addNewSubject() {
+    var name = prompt('New Subject name:');
+    if (name && name.trim()) { var t = name.trim(); if (!cardContent[t]) { cardContent[t] = {}; saveData(); renderSidebar(); loadSidebarState(); } }
+}
+function addNewSub(subj) {
+    var name = prompt('New Topic name for "' + subj + '":');
+    if (name && name.trim()) { var t = name.trim(); if (!cardContent[subj][t]) { cardContent[subj][t] = []; saveData(); renderSidebar(); loadSidebarState(); } }
+}
+function deleteSubject(subj) {
+    if (!confirm('Delete subject "' + subj + '" and all its cards?')) return;
+    delete cardContent[subj]; delete srsData[subj];
+    if (currentSubject === subj) { currentSubject = null; currentSub = null; document.getElementById('header-title').textContent = 'Select a Subject'; renderCard(); }
+    saveData(); renderSidebar(); renderDbList();
+}
+function deleteSub(subj, sub) {
+    if (!confirm('Delete topic "' + sub + '" and all its cards?')) return;
+    delete cardContent[subj][sub];
+    if (srsData[subj]) delete srsData[subj][sub];
+    if (currentSubject === subj && currentSub === sub) { currentSub = null; document.getElementById('header-title').textContent = subj; renderCard(); }
+    saveData(); renderSidebar(); renderDbList();
+}
 
-function toggleSubject(s) { document.getElementById('sub-'+s.replace(/\s+/g, '-')).classList.toggle('show'); }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
-function flipCard() { document.getElementById('active-card').classList.toggle('flipped'); }
-
+// ── FLASHCARDS ─────────────────────────────────────────────────────────
 function loadTopic(subj, sub) {
     currentSubject = subj; currentSub = sub;
-    document.getElementById('header-title').textContent = sub;
-    shuffledCards = cardContent[subj][sub] || [];
-    cardIndex = 0;
-    renderCard();
+    currentContainer = 'all'; reviewMissedMode = false;
+    missedCardsThisSession.clear(); cardIndex = 0;
+    sessionStats = {total:0,correct:0};
+    document.getElementById('header-title').textContent = subj + ' › ' + sub;
+    ensureSRS();
+    var cards = (cardContent[subj] && cardContent[subj][sub]) || [];
+    var srs   = (srsData[subj]    && srsData[subj][sub])    || [];
+    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
+    dueCards = w.filter(function(c){ return isDue(c.srs); });
+    shuffledCards = shuffle(dueCards.length ? dueCards : w);
+    renderCard(); updateStats(); renderDbList(); renderContSel();
+    document.querySelectorAll('.sub-item').forEach(function(el){ el.classList.remove('active'); });
+    if (event && event.target) { var si = event.target.closest('.sub-item'); if (si) si.classList.add('active'); }
     toggleSidebar();
 }
-
 function renderCard() {
-    var f = document.getElementById('card-front'), b = document.getElementById('card-back');
-    if(!shuffledCards.length) { f.textContent = "No cards found."; return; }
-    f.textContent = shuffledCards[cardIndex].q;
-    b.textContent = shuffledCards[cardIndex].a;
-}
-
-function nextCard(correct) {
-    if(!shuffledCards.length) return;
-    cardIndex = (cardIndex + 1) % shuffledCards.length;
-    renderCard();
+    var front = document.getElementById('card-front'), back = document.getElementById('card-back');
     document.getElementById('active-card').classList.remove('flipped');
+    if (!shuffledCards.length || cardIndex >= shuffledCards.length) {
+        front.textContent = currentSub ? 'No cards available' : 'Select a topic to begin';
+        back.textContent  = currentSub ? 'Add cards in the Data tab' : 'Your journey starts here';
+        return;
+    }
+    front.textContent = shuffledCards[cardIndex].q;
+    back.textContent  = shuffledCards[cardIndex].a;
 }
-
-function addNewSubject() {
-    var name = prompt("New Subject Name:");
-    if(name && !cardContent[name]) {
-        cardContent[name] = {"New Topic": [{q: "Sample Question", a: "Sample Answer"}]};
-        saveLocal(); renderSidebar();
+function flipCard() {
+    if (!shuffledCards.length || cardIndex >= shuffledCards.length) return;
+    document.getElementById('active-card').classList.toggle('flipped');
+}
+function nextCard(isCorrect) {
+    if (!currentSubject || !currentSub || !shuffledCards.length || cardIndex >= shuffledCards.length) return;
+    var cur = shuffledCards[cardIndex];
+    updateSRS(cur.srs, isCorrect ? 1 : 0);
+    if (!isCorrect) missedCardsThisSession.add(cur._index);
+    saveLocal();   // SRS is local-only
+    sessionStats.total++; if (isCorrect) sessionStats.correct++;
+    updateStats(); renderContSel();
+    cardIndex++; renderCard();
+}
+function updateStats() {
+    document.getElementById('stat-total').textContent = sessionStats.total;
+    var pct = sessionStats.total ? Math.round(sessionStats.correct / sessionStats.total * 100) : 0;
+    document.getElementById('stat-score').textContent = pct + '%';
+    if (currentSubject && currentSub && cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+        var srs = (srsData[currentSubject] && srsData[currentSubject][currentSub]) || [];
+        document.getElementById('stat-due').textContent      = srs.filter(function(s){ return isDue(s); }).length;
+        document.getElementById('stat-mastered').textContent = srs.filter(function(s){ return s.interval >= 7; }).length;
+        renderContStats(cardContent[currentSubject][currentSub]);
+    } else {
+        document.getElementById('stat-due').textContent = '-';
+        document.getElementById('stat-mastered').textContent = '-';
+        document.getElementById('container-stats').innerHTML = '';
     }
 }
 
-function changeSyncId() {
-    var newId = prompt("Enter Sync ID (Case sensitive):", DEVICE_ID);
-    if(newId && newId !== DEVICE_ID) {
-        DEVICE_ID = newId;
-        localStorage.setItem('monoFlashDeviceId', newId);
-        document.getElementById('current-device-id').textContent = newId;
+// ── CONTAINERS ─────────────────────────────────────────────────────────
+function renderContSel() {
+    var wrap = document.getElementById('cont-selector');
+    if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) { wrap.style.display='none'; return; }
+    var all = cardContent[currentSubject][currentSub];
+    var num = Math.ceil(all.length / CARDS_PER_CONTAINER);
+    if (all.length <= CARDS_PER_CONTAINER) { wrap.style.display='none'; return; }
+    wrap.style.display = 'flex'; wrap.innerHTML = '';
+    wrap.appendChild(mkCBtn('Missed (' + missedCardsThisSession.size + ')', reviewMissedMode, function(){ toggleReviewMissed(); }));
+    wrap.appendChild(mkCBtn('All', currentContainer === 'all' && !reviewMissedMode, function(){ selectContainer('all'); }));
+    for (var i = 0; i < num; i++) {
+        (function(i){
+            var s0 = i * CARDS_PER_CONTAINER, e0 = Math.min(s0 + CARDS_PER_CONTAINER, all.length);
+            wrap.appendChild(mkCBtn('C'+(i+1)+' ('+(e0-s0)+')', currentContainer === i && !reviewMissedMode, function(){ selectContainer(i); }));
+        })(i);
+    }
+    var info = document.createElement('div'); info.className = 'cont-info';
+    info.textContent = all.length + ' total cards · ' + CARDS_PER_CONTAINER + ' per container';
+    wrap.appendChild(info);
+}
+function mkCBtn(label, active, fn) {
+    var b = document.createElement('button'); b.className = 'cont-btn' + (active ? ' active' : '');
+    b.textContent = label; b.onclick = fn; return b;
+}
+function selectContainer(id) {
+    currentContainer = id; reviewMissedMode = false; cardIndex = 0;
+    if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) return;
+    var cards = cardContent[currentSubject][currentSub];
+    var srs   = srsData[currentSubject][currentSub];
+    if (id === 'all') {
+        var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
+        var due = w.filter(function(c){ return isDue(c.srs); });
+        shuffledCards = shuffle(due.length ? due : w);
+    } else {
+        var s0 = id * CARDS_PER_CONTAINER, e0 = Math.min(s0 + CARDS_PER_CONTAINER, cards.length);
+        var w2 = cards.slice(s0, e0).map(function(c,i){ return {q:c.q,a:c.a,srs:srs[s0+i],_index:s0+i}; });
+        var due2 = w2.filter(function(c){ return isDue(c.srs); });
+        shuffledCards = shuffle(due2.length ? due2 : w2);
+    }
+    renderCard(); renderContSel();
+}
+function toggleReviewMissed() {
+    if (!missedCardsThisSession.size) { alert('No missed cards yet!'); return; }
+    reviewMissedMode = !reviewMissedMode; cardIndex = 0;
+    if (reviewMissedMode) {
+        var cards = cardContent[currentSubject][currentSub];
+        var srs   = srsData[currentSubject][currentSub];
+        shuffledCards = shuffle(Array.from(missedCardsThisSession)
+            .map(function(i){ return {q:cards[i].q,a:cards[i].a,srs:srs[i],_index:i}; })
+            .filter(function(c){ return c.q; }));
+    } else { selectContainer(currentContainer); }
+    renderCard(); renderContSel();
+}
+function renderContStats(allCards) {
+    var wrap = document.getElementById('container-stats');
+    var num = Math.ceil(allCards.length / CARDS_PER_CONTAINER);
+    if (num <= 1) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = '<h3 class="db-sec-title" style="margin-bottom:16px;">Container Breakdown</h3>';
+    for (var i = 0; i < num; i++) {
+        var s0 = i * CARDS_PER_CONTAINER, e0 = Math.min(s0 + CARDS_PER_CONTAINER, allCards.length);
+        var csrs = srsData[currentSubject][currentSub].slice(s0, e0);
+        var box = document.createElement('div'); box.className = 'cont-stat';
+        box.innerHTML = '<div class="cont-stat-h">Container '+(i+1)+' ('+(e0-s0)+' cards)</div>' +
+            '<div class="cont-stat-d">' + csrs.filter(function(s){ return s.interval>=7; }).length + ' mastered · ' +
+            csrs.filter(function(s){ return isDue(s); }).length + ' due today</div>';
+        wrap.appendChild(box);
     }
 }
 
-function switchTab(t, el) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+// ── DATABASE ───────────────────────────────────────────────────────────
+function parseText(text) {
+    return text.split('\n').filter(function(l){ return l.includes('-!-'); }).map(function(l){
+        var p = l.split('-!-'); return p.length >= 2 ? {q:p[0].trim(), a:p.slice(1).join('-!-').trim()} : null;
+    }).filter(function(c){ return c && c.q && c.a; });
+}
+function validCards(arr) { return Array.isArray(arr) && arr.every(function(c){ return c && typeof c.q==='string' && typeof c.a==='string'; }); }
+
+function importJson() {
+    if (!currentSubject || !currentSub) { alert('Select a Subject and Topic first.'); return; }
+    var raw = document.getElementById('json-input').value.trim();
+    if (!raw) { alert('Enter some data first.'); return; }
+    var cards = [];
+    if (raw.includes('-!-')) { cards = parseText(raw); }
+    else { try { cards = JSON.parse(raw); if (!validCards(cards)) throw 0; } catch { alert('Invalid format.'); return; } }
+    if (!cards.length) { alert('No valid cards found.'); return; }
+    doAddCards(cards);
+    document.getElementById('json-input').value = '';
+}
+function importJsonFile(e) {
+    if (!currentSubject || !currentSub) { alert('Select a Subject and Topic first.'); e.target.value=''; return; }
+    var file = e.target.files && e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        try { var p = JSON.parse(ev.target.result); if (!validCards(p)) throw 0; doAddCards(p); }
+        catch { alert('Unable to parse file.'); }
+        e.target.value = '';
+    };
+    reader.readAsText(file);
+}
+function doAddCards(newCards) {
+    if (!cardContent[currentSubject][currentSub]) cardContent[currentSubject][currentSub] = [];
+    var existing = cardContent[currentSubject][currentSub];
+    var added = 0, dupes = 0;
+    newCards.forEach(function(c) {
+        if (existing.some(function(e){ return e.q.trim().toLowerCase() === c.q.trim().toLowerCase(); })) { dupes++; }
+        else { existing.push(c); added++; }
+    });
+    ensureSRS(); saveData(); renderDbList(); renderSidebar();
+    var cards = cardContent[currentSubject][currentSub];
+    var srs   = srsData[currentSubject][currentSub];
+    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
+    dueCards = w.filter(function(c){ return isDue(c.srs); });
+    shuffledCards = shuffle(dueCards.length ? dueCards : w);
+    renderCard();
+    alert('Added ' + added + ' card' + (added!==1?'s':'') + '!' + (dupes ? '\n' + dupes + ' duplicate' + (dupes!==1?'s':'') + ' skipped.' : ''));
+}
+function exportJson() {
+    if (!currentSubject || !currentSub) { alert('Select a Subject and Topic first.'); return; }
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(cardContent[currentSubject][currentSub],null,2)],{type:'application/json'}));
+    a.download = safeId(currentSubject) + '-' + safeId(currentSub) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+}
+function exportFullBackup() {
+    var total = 0;
+    for (var s in cardContent) for (var t in cardContent[s]) total += cardContent[s][t].length;
+    var backup = {version:1, exportDate:new Date().toISOString(), deviceId:DEVICE_ID, cardContent:cardContent, metadata:{totalSubjects:Object.keys(cardContent).length, totalCards:total}};
+    var ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
+    a.download = 'MonoFlash-Backup-' + ts + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    alert('✅ Backup created!\n\n' + backup.metadata.totalSubjects + ' subjects\n' + backup.metadata.totalCards + ' total cards');
+}
+function importFullBackup(e) {
+    var file = e.target.files && e.target.files[0]; if (!file) return;
+    if (!confirm('⚠️ This will REPLACE all your current data. Continue?')) { e.target.value=''; return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            var b = JSON.parse(ev.target.result);
+            if (!b.cardContent || typeof b.cardContent !== 'object') throw new Error('Invalid backup');
+            var total = 0;
+            for (var s in b.cardContent) for (var t in b.cardContent[s]) total += b.cardContent[s][t].length;
+            if (!confirm('📦 Ready to import:\n✓ ' + Object.keys(b.cardContent).length + ' subjects\n✓ ' + total + ' cards\n\nProceed?')) { e.target.value=''; return; }
+            cardContent = b.cardContent; srsData = {};
+            ensureSRS(); saveData();
+            renderSidebar(); loadSidebarState(); renderDbList();
+            currentSubject = null; currentSub = null;
+            document.getElementById('header-title').textContent = 'Select a Subject';
+            renderCard();
+            alert('✅ Imported! Syncing to cloud…');
+        } catch(err) { alert('❌ Failed: ' + err.message); }
+        e.target.value = '';
+    };
+    reader.readAsText(file);
+}
+function renderDbList() {
+    var list = document.getElementById('db-list'); list.innerHTML = '';
+    if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) return;
+    cardContent[currentSubject][currentSub].forEach(function(c, i) {
+        var item = document.createElement('div'); item.className = 'db-item';
+        var content = document.createElement('div'); content.className = 'db-item-content';
+        content.innerHTML = '<div class="db-key">' + c.q + '</div><div class="db-val">' + c.a + '</div>';
+        var del = document.createElement('button'); del.className = 'btn';
+        del.style.cssText = 'padding:6px 12px;font-size:.75rem;flex:none;';
+        del.textContent = 'Delete';
+        del.onclick = (function(idx){ return function(){ deleteCard(idx); }; })(i);
+        item.appendChild(content); item.appendChild(del); list.appendChild(item);
+    });
+}
+function deleteCard(idx) {
+    if (!confirm('Delete this card?')) return;
+    cardContent[currentSubject][currentSub].splice(idx,1);
+    if (srsData[currentSubject] && srsData[currentSubject][currentSub]) srsData[currentSubject][currentSub].splice(idx,1);
+    saveData(); renderDbList(); renderSidebar();
+    var cards = cardContent[currentSubject][currentSub];
+    var srs   = srsData[currentSubject][currentSub];
+    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
+    shuffledCards = shuffle(w.filter(function(c){ return isDue(c.srs); }).length ? w.filter(function(c){ return isDue(c.srs); }) : w);
+    renderCard();
+}
+function clearAllCards() {
+    if (!currentSubject || !currentSub) { alert('Select a subject and topic first.'); return; }
+    if (!confirm('Clear ALL cards in ' + currentSubject + ' > ' + currentSub + '?')) return;
+    cardContent[currentSubject][currentSub] = [];
+    if (srsData[currentSubject]) srsData[currentSubject][currentSub] = [];
+    saveData(); renderDbList(); renderSidebar(); shuffledCards = []; renderCard();
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+    document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
     el.classList.add('active');
-    if(t !== 'flashcard') alert("This view is available in the full version.");
+    if (name === 'performance') updateStats();
 }
 
+// ── UTILS ──────────────────────────────────────────────────────────────
+function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length-1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)); var tmp=a[i]; a[i]=a[j]; a[j]=tmp; }
+    return a;
+}
+function safeId(s) { return String(s||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-'); }
+
+// ── KEYBOARD ───────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    var tab = document.querySelector('.tab-view.active');
+    if (!tab || tab.id !== 'tab-flashcard') return;
+    if (e.code==='Space'||e.code==='Enter')       { e.preventDefault(); flipCard(); }
+    else if (e.code==='ArrowRight'||e.code==='KeyJ') { e.preventDefault(); nextCard(true); }
+    else if (e.code==='ArrowLeft'||e.code==='KeyF')  { e.preventDefault(); nextCard(false); }
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────
 renderSidebar();
+loadSidebarState();
 </script>
 </body>
 </html>
