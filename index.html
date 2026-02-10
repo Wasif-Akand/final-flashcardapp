@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash</title>
 
-    <!-- Firebase SDK — onSnapshot for real-time updates -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence }
@@ -360,7 +360,6 @@ var missedCardsThisSession = new Set();
 // ── FIREBASE REAL-TIME ─────────────────────────────────────────────────
 var unsubLive = null;
 var isSyncing = false;
-var ownWrite  = false;   // suppress echo after our own push
 
 function startRealtimeSync() {
     if (!window.firebaseReady || !window.firebaseDB) {
@@ -376,32 +375,39 @@ function startRealtimeSync() {
 
     var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
 
-    unsubLive = window.firebaseOnSnapshot(docRef,
+    // FIXED LOGIC: Ignore local echo via metadata, ignore clock skew
+    unsubLive = window.firebaseOnSnapshot(docRef, { includeMetadataChanges: true },
         function(snap) {
-            if (ownWrite) return;   // ignore echo of our own push
+            // 1. If this is a local write (latency compensation), ignore it to avoid loops
+            if (snap.metadata.hasPendingWrites) {
+                return; 
+            }
+
             setRing(100); setDot('online'); setRealtime(true);
             syncTextEl.textContent = 'Sync Now';
 
             if (snap.exists()) {
-                var cloud   = snap.data();
-                var cloudTs = cloud.lastSync || 0;
-                var localTs = parseInt(localStorage.getItem('monoFlashCardContent_timestamp') || '0', 10);
+                var cloud = snap.data();
+                var cloudContent = cloud.cardContent;
 
-                if (cloudTs > localTs) {
-                    // Cloud is newer — pull it
-                    cardContent = cloud.cardContent;
-                    localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
-                    localStorage.setItem('monoFlashCardContent_timestamp', String(cloudTs));
-                    ensureSRS(); saveLocal();
-                    renderSidebar(); loadSidebarState();
+                // 2. Clock-agnostic check: Only update if data is actually different
+                if (JSON.stringify(cardContent) !== JSON.stringify(cloudContent)) {
+                    cardContent = cloudContent;
+                    saveLocal(); // Save to localStorage
+                    renderSidebar();
+                    loadSidebarState();
+                    if (currentSubject && currentSub) {
+                        // If we are currently studying a topic that got updated, reload it
+                        // to show the new cards immediately
+                        loadTopic(currentSubject, currentSub);
+                    }
                     syncHelpEl.textContent = '⬇ Updated from cloud';
-                    console.log('📥 Pulled newer cloud data');
+                    console.log('📥 Pulled change from cloud');
                 } else {
                     syncHelpEl.textContent = '✓ Up to date';
                 }
             } else {
-                // Nothing in cloud yet — push local data up
-                syncHelpEl.textContent = 'First sync — pushing local data…';
+                syncHelpEl.textContent = 'New ID — pushing local data…';
                 pushToCloud();
             }
         },
@@ -417,7 +423,7 @@ function startRealtimeSync() {
 
 function pushToCloud() {
     if (!window.firebaseReady || !window.firebaseDB || isSyncing) return;
-    isSyncing = true; ownWrite = true;
+    isSyncing = true;
     setDot('syncing'); setRing(10);
     syncTextEl.textContent = 'Syncing…';
 
@@ -430,15 +436,12 @@ function pushToCloud() {
         deviceId:    DEVICE_ID
     }, { merge: true })
     .then(function() {
-        var now = Date.now();
-        localStorage.setItem('monoFlashCardContent_timestamp', String(now));
         setRing(100); setDot('online');
         syncTextEl.textContent = 'Sync Now';
         syncHelpEl.textContent = '⬆ Synced to cloud';
         console.log('✅ Pushed to cloud');
         setTimeout(function() {
             if (syncHelpEl.textContent === '⬆ Synced to cloud') syncHelpEl.textContent = '✓ Up to date';
-            ownWrite = false;
         }, 3000);
     })
     .catch(function(err) {
@@ -446,7 +449,6 @@ function pushToCloud() {
         setDot(err.code === 'unavailable' ? 'offline' : 'error');
         syncTextEl.textContent = 'Sync Now';
         syncHelpEl.textContent = err.code === 'unavailable' ? 'No internet. Saved locally.' : 'Push failed: ' + err.code;
-        ownWrite = false;
     })
     .finally(function() { isSyncing = false; });
 }
@@ -465,19 +467,16 @@ function readDatabase() {
     window.firebaseOnSnapshot(docRef, { includeMetadataChanges: false },
         function(snap) {
             if (snap.exists()) {
-                var cloud   = snap.data();
-                var cloudTs = cloud.lastSync || 0;
-                var localTs = parseInt(localStorage.getItem('monoFlashCardContent_timestamp') || '0', 10);
+                var cloud = snap.data();
+                var cloudContent = cloud.cardContent;
 
-                if (cloudTs > localTs) {
-                    cardContent = cloud.cardContent;
-                    localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
-                    localStorage.setItem('monoFlashCardContent_timestamp', String(cloudTs));
-                    ensureSRS(); saveLocal();
-                    renderSidebar(); loadSidebarState();
+                if (JSON.stringify(cardContent) !== JSON.stringify(cloudContent)) {
+                    cardContent = cloudContent;
+                    saveLocal();
+                    renderSidebar();
+                    loadSidebarState();
                     syncHelpEl.textContent = '⬇ Updated from cloud!';
                     readTextEl.textContent = '✓ Updated!';
-                    console.log('📥 Manual read: pulled newer cloud data');
                 } else {
                     syncHelpEl.textContent = '✓ Already up to date';
                     readTextEl.textContent = '✓ Up to date';
