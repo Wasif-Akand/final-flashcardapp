@@ -228,7 +228,12 @@
             </div>
             <span id="sync-text">Sync Now</span>
         </button>
-        <button class="sync-btn" onclick="changeSyncId()"><span>🔗 Link Device</span></button>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button class="sync-btn" style="margin-bottom:0;flex:1;" onclick="readDatabase()">
+                <span id="read-text">📖 Read Database</span>
+            </button>
+            <button class="sync-btn" style="margin-bottom:0;width:48px;flex:none;font-size:1.2rem;padding:12px 0;" onclick="changeSyncId()" title="Change Device ID">🔗</button>
+        </div>
         <div class="rt-badge off" id="rt-badge">
             <span class="rt-dot"></span>
             <span id="rt-label">Real-time: off</span>
@@ -447,6 +452,49 @@ function pushToCloud() {
 }
 
 function manualSync() { pushToCloud(); }
+
+function readDatabase() {
+    if (!window.firebaseReady || !window.firebaseDB) {
+        syncHelpEl.textContent = 'Offline — cannot read cloud.';
+        return;
+    }
+    var readTextEl = document.getElementById('read-text');
+    readTextEl.textContent = '⏳ Reading…';
+
+    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
+    window.firebaseOnSnapshot(docRef, { includeMetadataChanges: false },
+        function(snap) {
+            if (snap.exists()) {
+                var cloud   = snap.data();
+                var cloudTs = cloud.lastSync || 0;
+                var localTs = parseInt(localStorage.getItem('monoFlashCardContent_timestamp') || '0', 10);
+
+                if (cloudTs > localTs) {
+                    cardContent = cloud.cardContent;
+                    localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
+                    localStorage.setItem('monoFlashCardContent_timestamp', String(cloudTs));
+                    ensureSRS(); saveLocal();
+                    renderSidebar(); loadSidebarState();
+                    syncHelpEl.textContent = '⬇ Updated from cloud!';
+                    readTextEl.textContent = '✓ Updated!';
+                    console.log('📥 Manual read: pulled newer cloud data');
+                } else {
+                    syncHelpEl.textContent = '✓ Already up to date';
+                    readTextEl.textContent = '✓ Up to date';
+                }
+            } else {
+                syncHelpEl.textContent = 'No cloud data found.';
+                readTextEl.textContent = '📖 Read Database';
+            }
+            setTimeout(function() { readTextEl.textContent = '📖 Read Database'; }, 3000);
+        },
+        function(err) {
+            console.error('Read error:', err);
+            syncHelpEl.textContent = 'Read failed: ' + err.code;
+            readTextEl.textContent = '📖 Read Database';
+        }
+    );
+}
 
 // Wait for Firebase, then start real-time listener
 var fbChecks = 0;
