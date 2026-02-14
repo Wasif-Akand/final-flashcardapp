@@ -171,11 +171,20 @@
         .db-btn-group .btn{flex:1;min-width:120px;padding:12px 20px;font-size:.8rem;}
         .db-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;margin-top:32px;}
         .db-list-head h3{margin:0;font-size:1.1rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
-        .db-item{padding:16px;border:1px solid var(--border);background:var(--surface-el);margin-bottom:8px;border-radius:10px;display:flex;justify-content:space-between;gap:12px;transition:all var(--tf);}
+        .db-item{padding:16px;border:1px solid var(--border);background:var(--surface-el);margin-bottom:8px;border-radius:10px;display:flex;justify-content:space-between;gap:12px;transition:all var(--tf);align-items:flex-start;}
         .db-item:hover{border-color:var(--border-b);box-shadow:var(--sh-sm);}
         .db-item-content{flex:1;min-width:0;}
         .db-key{font-weight:700;margin-bottom:6px;word-wrap:break-word;font-size:.9rem;}
         .db-val{color:var(--dim);font-size:.85rem;word-wrap:break-word;line-height:1.4;}
+        .db-item-actions{display:flex;gap:6px;flex-direction:column;flex-shrink:0;}
+        .db-btn-edit{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);color:#ffd700;}
+        .db-btn-edit:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);box-shadow:0 0 8px rgba(255,215,0,.2);}
+        .db-btn-delete{background:rgba(231,76,60,.08);border-color:rgba(231,76,60,.3);color:#e74c3c;}
+        .db-btn-delete:hover{background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.5);box-shadow:0 0 8px rgba(231,76,60,.2);}
+        .db-item-edit{display:flex;gap:12px;align-items:flex-start;flex:1;}
+        .db-edit-inputs{flex:1;display:flex;flex-direction:column;gap:8px;}
+        .db-edit-input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border-b);padding:10px;border-radius:6px;font-family:inherit;font-size:.85rem;transition:all var(--tf);}
+        .db-edit-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,255,255,.1);}
 
         /* NAV */
         nav{display:flex;border-top:1px solid var(--border-b);padding-bottom:env(safe-area-inset-bottom);background:var(--surface);box-shadow:0 -4px 16px rgba(0,0,0,.5);position:relative;z-index:10;}
@@ -1099,16 +1108,101 @@ function renderDbList() {
     var list = document.getElementById('db-list'); list.innerHTML = '';
     if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) return;
     cardContent[currentSubject][currentSub].forEach(function(c, i) {
-        var item = document.createElement('div'); item.className = 'db-item';
-        var content = document.createElement('div'); content.className = 'db-item-content';
+        var item = document.createElement('div'); 
+        item.className = 'db-item';
+        item.id = 'db-item-' + i;
+        
+        var content = document.createElement('div'); 
+        content.className = 'db-item-content';
         content.innerHTML = '<div class="db-key">' + c.q + '</div><div class="db-val">' + c.a + '</div>';
-        var del = document.createElement('button'); del.className = 'btn';
-        del.style.cssText = 'padding:6px 12px;font-size:.75rem;flex:none;';
-        del.textContent = 'Delete';
-        del.onclick = (function(idx){ return function(){ deleteCard(idx); }; })(i);
-        item.appendChild(content); item.appendChild(del); list.appendChild(item);
+        
+        var actions = document.createElement('div');
+        actions.className = 'db-item-actions';
+        
+        var editBtn = document.createElement('button'); 
+        editBtn.className = 'btn db-btn-edit';
+        editBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;';
+        editBtn.textContent = '✏️ Edit';
+        editBtn.onclick = (function(idx){ return function(){ editCard(idx); }; })(i);
+        
+        var delBtn = document.createElement('button'); 
+        delBtn.className = 'btn db-btn-delete';
+        delBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;';
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = (function(idx){ return function(){ deleteCard(idx); }; })(i);
+        
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        item.appendChild(content); 
+        item.appendChild(actions); 
+        list.appendChild(item);
     });
 }
+function editCard(idx) {
+    var item = document.getElementById('db-item-' + idx);
+    if (!item) return;
+    
+    var card = cardContent[currentSubject][currentSub][idx];
+    
+    // Create edit interface
+    var editDiv = document.createElement('div');
+    editDiv.className = 'db-item-edit';
+    
+    var inputsDiv = document.createElement('div');
+    inputsDiv.className = 'db-edit-inputs';
+    
+    var qInput = document.createElement('input');
+    qInput.className = 'db-edit-input';
+    qInput.value = card.q;
+    qInput.placeholder = 'Question';
+    
+    var aInput = document.createElement('input');
+    aInput.className = 'db-edit-input';
+    aInput.value = card.a;
+    aInput.placeholder = 'Answer';
+    
+    inputsDiv.appendChild(qInput);
+    inputsDiv.appendChild(aInput);
+    
+    var actions = document.createElement('div');
+    actions.className = 'db-item-actions';
+    
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn';
+    saveBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;background:var(--ok);border-color:var(--ok);';
+    saveBtn.textContent = '💾 Save';
+    saveBtn.onclick = function() {
+        var newQ = qInput.value.trim();
+        var newA = aInput.value.trim();
+        if (!newQ || !newA) { alert('Question and Answer cannot be empty'); return; }
+        cardContent[currentSubject][currentSub][idx] = {q: newQ, a: newA};
+        saveData();
+        renderDbList();
+        // Update current card if it's being displayed
+        if (shuffledCards[cardIndex] && shuffledCards[cardIndex]._index === idx) {
+            shuffledCards[cardIndex].q = newQ;
+            shuffledCards[cardIndex].a = newA;
+            renderCard();
+        }
+    };
+    
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn';
+    cancelBtn.style.cssText = 'padding:6px 12px;font-size:.75rem;';
+    cancelBtn.textContent = '✕ Cancel';
+    cancelBtn.onclick = function() { renderDbList(); };
+    
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    editDiv.appendChild(inputsDiv);
+    editDiv.appendChild(actions);
+    
+    // Replace content
+    item.innerHTML = '';
+    item.appendChild(editDiv);
+    qInput.focus();
+}
+
 function deleteCard(idx) {
     if (!confirm('Delete this card?')) return;
     cardContent[currentSubject][currentSub].splice(idx,1);
