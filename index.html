@@ -105,10 +105,13 @@
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
         /* FLASHCARD */
-        .progress-bar-wrap{width:100%;height:3px;background:var(--border);margin-bottom:16px;border-radius:2px;overflow:hidden;opacity:.7;transition:opacity var(--tn);}
+        .progress-bar-wrap{width:100%;height:6px;background:var(--border);margin-bottom:16px;border-radius:3px;overflow:hidden;opacity:.9;transition:opacity var(--tn);box-shadow:inset 0 1px 3px rgba(0,0,0,.5);}
         .progress-bar-wrap:hover{opacity:1;}
-        .progress-bar{height:100%;background:linear-gradient(90deg,#fff 0%,#888 100%);width:0%;transition:width .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(255,255,255,.3);}
+        .progress-bar{height:100%;background:linear-gradient(90deg,#fff 0%,#ddd 100%);width:0%;transition:width .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px rgba(255,255,255,.4),0 0 4px rgba(255,255,255,.6);}
         .progress-text{font-size:.7rem;color:var(--dim);text-align:center;margin-bottom:12px;font-weight:600;letter-spacing:.5px;}
+        .bookmark-icon{position:absolute;top:12px;right:12px;font-size:1.5rem;cursor:pointer;z-index:10;transition:all .25s cubic-bezier(.4,0,.2,1);user-select:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+        .bookmark-icon:hover{transform:scale(1.2) rotate(-10deg);filter:drop-shadow(0 4px 8px rgba(0,0,0,.8));}
+        .bookmark-icon.active{filter:drop-shadow(0 0 8px rgba(255,215,0,.6));}
         .card-container{flex:1;display:flex;justify-content:center;align-items:center;perspective:1600px;padding:20px 0;}
         .card{width:100%;max-width:380px;height:280px;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1),box-shadow var(--tn);cursor:pointer;box-shadow:var(--sh-lg);}
         .card:hover{box-shadow:0 12px 48px rgba(0,0,0,1),0 0 0 1px rgba(255,255,255,.1);transform:translateY(-4px) scale(1.01);}
@@ -128,10 +131,23 @@
         :focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
 
         /* CONTAINERS */
-        .cont-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:10px;border:1px solid var(--border-b);border-radius:10px;background:var(--surface-el);box-shadow:inset 0 2px 4px rgba(0,0,0,.3);}
+        .cont-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:10px;border:1px solid var(--border-b);border-radius:10px;background:var(--surface-el);box-shadow:inset 0 2px 4px rgba(0,0,0,.3);overflow:hidden;transition:all .3s cubic-bezier(.4,0,.2,1);}
+        .cont-selector.collapsed{padding:0;max-height:48px;}
+        .cont-header{width:100%;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);transition:all .2s;user-select:none;}
+        .cont-header:hover{color:var(--text);background:rgba(255,255,255,.03);}
+        .cont-chevron{font-size:.7rem;transition:transform .3s cubic-bezier(.4,0,.2,1);}
+        .cont-selector.collapsed .cont-chevron{transform:rotate(-90deg);}
+        .cont-buttons{display:flex;gap:6px;flex-wrap:wrap;width:100%;transition:all .3s cubic-bezier(.4,0,.2,1);}
+        .cont-selector.collapsed .cont-buttons{display:none;}
         .cont-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--dim);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.5px;transition:all var(--tf);white-space:nowrap;text-transform:uppercase;user-select:none;}
         .cont-btn:hover{background:var(--surface-el);color:var(--text);border-color:var(--border-b);transform:translateY(-1px);}
         .cont-btn.active{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border-color:var(--accent);}
+        .cont-btn.missed{background:rgba(231,76,60,.08);border-color:rgba(231,76,60,.3);color:#e74c3c;}
+        .cont-btn.missed:hover{background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.5);box-shadow:0 0 8px rgba(231,76,60,.2);}
+        .cont-btn.missed.active{background:rgba(231,76,60,.2);border-color:#e74c3c;color:#e74c3c;box-shadow:0 0 12px rgba(231,76,60,.3);}
+        .cont-btn.bookmarks{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);color:#ffd700;}
+        .cont-btn.bookmarks:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);box-shadow:0 0 8px rgba(255,215,0,.2);}
+        .cont-btn.bookmarks.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.3);}
         .cont-info{font-size:.7rem;color:var(--dimmer);margin-top:8px;width:100%;text-align:center;}
 
         /* STATS */
@@ -170,7 +186,7 @@
         .nav-item.active::before{transform:translateX(-50%) scaleX(1);}
 
         /* OVERLAY */
-        #overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);z-index:900;display:none;}
+        #overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);z-index:900;display:none;}
         #overlay.show{display:block;animation:fadeIn var(--tn);}
 
         /* RESPONSIVE */
@@ -234,15 +250,23 @@
     <section id="content-area">
 
         <div id="tab-flashcard" class="tab-view active">
-            <div class="progress-text" id="progress-text" style="display:none;">0 / 0</div>
+            <div class="progress-text" id="progress-text" style="display:none;">1 / 0</div>
             <div class="progress-bar-wrap" id="progress-wrap" style="display:none;">
                 <div class="progress-bar" id="progress-bar"></div>
             </div>
-            <div class="cont-selector" id="cont-selector" style="display:none;"></div>
+            <div class="cont-selector" id="cont-selector" style="display:none;">
+                <div class="cont-header" onclick="toggleContainerCollapse()">
+                    <span class="cont-chevron">▼</span>
+                    <span>Containers</span>
+                </div>
+                <div class="cont-buttons" id="cont-buttons"></div>
+                <div class="cont-info" id="cont-info"></div>
+            </div>
             <div class="card-container">
-                <div class="card" onclick="flipCard()" id="active-card">
-                    <div class="card-face" id="card-front">Select a topic to begin</div>
-                    <div class="card-face card-back" id="card-back">Your journey starts here</div>
+                <div class="card" id="active-card">
+                    <div class="bookmark-icon" id="bookmark-icon" onclick="toggleBookmark(event)">☆</div>
+                    <div class="card-face" onclick="flipCard()" id="card-front">Select a topic to begin</div>
+                    <div class="card-face card-back" onclick="flipCard()" id="card-back">Your journey starts here</div>
                 </div>
             </div>
             <div class="controls">
@@ -501,11 +525,12 @@ function setRing(pct) {
 // ── DATA ───────────────────────────────────────────────────────────────
 var cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent') || '{}');
 var srsData     = JSON.parse(localStorage.getItem('monoFlashSRSData')     || '{}');
+var bookmarks   = JSON.parse(localStorage.getItem('monoFlashBookmarks')   || '{}');
 var currentSubject = null, currentSub = null;
 var cardIndex = 0, sessionStats = {total:0,correct:0};
 var shuffledCards = [], dueCards = [];
 var CARDS_PER_CONTAINER = 20;
-var currentContainer = 'all', reviewMissedMode = false;
+var currentContainer = 'all', reviewMissedMode = false, reviewBookmarksMode = false;
 var missedCardsThisSession = new Set();
 
 // ── MANUAL SYNC (WITH LAZY FIREBASE LOAD) ─────────────────────────────
@@ -641,6 +666,7 @@ function saveLocal() {
     ensureSRS();
     localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
     localStorage.setItem('monoFlashSRSData',     JSON.stringify(srsData));
+    localStorage.setItem('monoFlashBookmarks',   JSON.stringify(bookmarks));
 }
 function saveData() { saveLocal(); }
 
@@ -733,10 +759,60 @@ function deleteSub(subj, sub) {
     saveData(); renderSidebar(); renderDbList();
 }
 
+// ── BOOKMARKS ──────────────────────────────────────────────────────────
+function toggleBookmark(e) {
+    e.stopPropagation(); // Don't flip card when clicking bookmark
+    if (!currentSubject || !currentSub || !shuffledCards.length || cardIndex >= shuffledCards.length) return;
+    
+    var cardIdx = shuffledCards[cardIndex]._index;
+    
+    // Initialize structure if needed
+    if (!bookmarks[currentSubject]) bookmarks[currentSubject] = {};
+    if (!bookmarks[currentSubject][currentSub]) bookmarks[currentSubject][currentSub] = [];
+    
+    var bookmarkList = bookmarks[currentSubject][currentSub];
+    var idx = bookmarkList.indexOf(cardIdx);
+    
+    if (idx > -1) {
+        // Remove bookmark
+        bookmarkList.splice(idx, 1);
+    } else {
+        // Add bookmark
+        bookmarkList.push(cardIdx);
+    }
+    
+    saveLocal();
+    updateBookmarkIcon();
+    renderContSel(); // Update counts
+}
+
+function updateBookmarkIcon() {
+    var icon = document.getElementById('bookmark-icon');
+    if (!currentSubject || !currentSub || !shuffledCards.length || cardIndex >= shuffledCards.length) {
+        icon.style.display = 'none';
+        return;
+    }
+    
+    icon.style.display = 'block';
+    var cardIdx = shuffledCards[cardIndex]._index;
+    var isBookmarked = bookmarks[currentSubject] && 
+                       bookmarks[currentSubject][currentSub] && 
+                       bookmarks[currentSubject][currentSub].indexOf(cardIdx) > -1;
+    
+    icon.textContent = isBookmarked ? '★' : '☆';
+    icon.className = isBookmarked ? 'bookmark-icon active' : 'bookmark-icon';
+}
+
+function getBookmarkCount() {
+    if (!currentSubject || !currentSub) return 0;
+    return (bookmarks[currentSubject] && bookmarks[currentSubject][currentSub]) ? 
+           bookmarks[currentSubject][currentSub].length : 0;
+}
+
 // ── FLASHCARDS ─────────────────────────────────────────────────────────
 function loadTopic(subj, sub) {
     currentSubject = subj; currentSub = sub;
-    currentContainer = 'all'; reviewMissedMode = false;
+    currentContainer = 'all'; reviewMissedMode = false; reviewBookmarksMode = false;
     missedCardsThisSession.clear(); cardIndex = 0;
     sessionStats = {total:0,correct:0};
     document.getElementById('header-title').textContent = subj + ' › ' + sub;
@@ -765,20 +841,22 @@ function renderCard() {
         back.textContent  = currentSub ? 'Add cards in the Data tab' : 'Your journey starts here';
         progressWrap.style.display = 'none';
         progressText.style.display = 'none';
+        document.getElementById('bookmark-icon').style.display = 'none';
         return;
     }
     
-    // Show and update progress
+    // Show and update progress (start counting at 1)
     if (shuffledCards.length > 0) {
         progressWrap.style.display = 'block';
         progressText.style.display = 'block';
         var pct = (cardIndex / shuffledCards.length) * 100;
         progressBar.style.width = pct + '%';
-        progressText.textContent = cardIndex + ' / ' + shuffledCards.length;
+        progressText.textContent = (cardIndex + 1) + ' / ' + shuffledCards.length;
     }
     
     front.textContent = shuffledCards[cardIndex].q;
     back.textContent  = shuffledCards[cardIndex].a;
+    updateBookmarkIcon();
 }
 function flipCard() {
     if (!shuffledCards.length || cardIndex >= shuffledCards.length) return;
@@ -820,29 +898,58 @@ function updateStats() {
 // ── CONTAINERS ─────────────────────────────────────────────────────────
 function renderContSel() {
     var wrap = document.getElementById('cont-selector');
-    if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) { wrap.style.display='none'; return; }
+    var buttons = document.getElementById('cont-buttons');
+    var info = document.getElementById('cont-info');
+    
+    if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) { 
+        wrap.style.display='none'; 
+        return; 
+    }
+    
     var all = cardContent[currentSubject][currentSub];
     var num = Math.ceil(all.length / CARDS_PER_CONTAINER);
-    if (all.length <= CARDS_PER_CONTAINER) { wrap.style.display='none'; return; }
-    wrap.style.display = 'flex'; wrap.innerHTML = '';
-    wrap.appendChild(mkCBtn('Missed (' + missedCardsThisSession.size + ')', reviewMissedMode, function(){ toggleReviewMissed(); }));
-    wrap.appendChild(mkCBtn('All', currentContainer === 'all' && !reviewMissedMode, function(){ selectContainer('all'); }));
+    
+    if (all.length <= CARDS_PER_CONTAINER && missedCardsThisSession.size === 0 && getBookmarkCount() === 0) { 
+        wrap.style.display='none'; 
+        return; 
+    }
+    
+    wrap.style.display = 'flex';
+    buttons.innerHTML = '';
+    
+    // Bookmarks button (golden) - FIRST
+    var bookmarkBtn = mkCBtn('Bookmarks (' + getBookmarkCount() + ')', reviewBookmarksMode, function(){ toggleReviewBookmarks(); });
+    bookmarkBtn.classList.add('bookmarks');
+    buttons.appendChild(bookmarkBtn);
+    
+    // Missed button (red) - SECOND
+    var missedBtn = mkCBtn('Missed (' + missedCardsThisSession.size + ')', reviewMissedMode, function(){ toggleReviewMissed(); });
+    missedBtn.classList.add('missed');
+    buttons.appendChild(missedBtn);
+    
+    // All button - THIRD
+    buttons.appendChild(mkCBtn('All', currentContainer === 'all' && !reviewMissedMode && !reviewBookmarksMode, function(){ selectContainer('all'); }));
+    
+    // Container buttons
     for (var i = 0; i < num; i++) {
         (function(i){
             var s0 = i * CARDS_PER_CONTAINER, e0 = Math.min(s0 + CARDS_PER_CONTAINER, all.length);
-            wrap.appendChild(mkCBtn('C'+(i+1)+' ('+(e0-s0)+')', currentContainer === i && !reviewMissedMode, function(){ selectContainer(i); }));
+            buttons.appendChild(mkCBtn('C'+(i+1)+' ('+(e0-s0)+')', currentContainer === i && !reviewMissedMode && !reviewBookmarksMode, function(){ selectContainer(i); }));
         })(i);
     }
-    var info = document.createElement('div'); info.className = 'cont-info';
+    
     info.textContent = all.length + ' total cards · ' + CARDS_PER_CONTAINER + ' per container';
-    wrap.appendChild(info);
+}
+
+function toggleContainerCollapse() {
+    document.getElementById('cont-selector').classList.toggle('collapsed');
 }
 function mkCBtn(label, active, fn) {
     var b = document.createElement('button'); b.className = 'cont-btn' + (active ? ' active' : '');
     b.textContent = label; b.onclick = fn; return b;
 }
 function selectContainer(id) {
-    currentContainer = id; reviewMissedMode = false; cardIndex = 0;
+    currentContainer = id; reviewMissedMode = false; reviewBookmarksMode = false; cardIndex = 0;
     if (!currentSubject || !currentSub || !(cardContent[currentSubject] && cardContent[currentSubject][currentSub])) return;
     var cards = cardContent[currentSubject][currentSub];
     var srs   = srsData[currentSubject][currentSub];
@@ -860,11 +967,25 @@ function selectContainer(id) {
 }
 function toggleReviewMissed() {
     if (!missedCardsThisSession.size) { alert('No missed cards yet!'); return; }
-    reviewMissedMode = !reviewMissedMode; cardIndex = 0;
+    reviewMissedMode = !reviewMissedMode; reviewBookmarksMode = false; cardIndex = 0;
     if (reviewMissedMode) {
         var cards = cardContent[currentSubject][currentSub];
         var srs   = srsData[currentSubject][currentSub];
         shuffledCards = shuffle(Array.from(missedCardsThisSession)
+            .map(function(i){ return {q:cards[i].q,a:cards[i].a,srs:srs[i],_index:i}; })
+            .filter(function(c){ return c.q; }));
+    } else { selectContainer(currentContainer); }
+    renderCard(); renderContSel();
+}
+function toggleReviewBookmarks() {
+    var count = getBookmarkCount();
+    if (!count) { alert('No bookmarked cards yet!'); return; }
+    reviewBookmarksMode = !reviewBookmarksMode; reviewMissedMode = false; cardIndex = 0;
+    if (reviewBookmarksMode) {
+        var cards = cardContent[currentSubject][currentSub];
+        var srs   = srsData[currentSubject][currentSub];
+        var bookmarkedIndices = bookmarks[currentSubject][currentSub] || [];
+        shuffledCards = shuffle(bookmarkedIndices
             .map(function(i){ return {q:cards[i].q,a:cards[i].a,srs:srs[i],_index:i}; })
             .filter(function(c){ return c.q; }));
     } else { selectContainer(currentContainer); }
