@@ -333,6 +333,12 @@ function getDeviceId() {
     if (!id) { id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2,9); localStorage.setItem('monoFlashDeviceId', id); }
     return id;
 }
+
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 var DEVICE_ID = getDeviceId();
 document.getElementById('current-device-id').textContent = DEVICE_ID;
 
@@ -434,12 +440,16 @@ async function loadFirebase() {
         
         setRing(90);
         
-        // Try to enable persistence (may fail in some contexts, that's OK)
-        try {
-            await enableIndexedDbPersistence(db);
-            console.log('💾 Persistence enabled');
-        } catch(e) {
-            console.log('⚠️ Persistence not available:', e.code);
+        // Try to enable persistence (skip on iOS due to WebKit bugs in iOS 15.x)
+        if (!isIOS()) {
+            try {
+                await enableIndexedDbPersistence(db);
+                console.log('💾 Persistence enabled');
+            } catch(e) {
+                console.log('⚠️ Persistence not available:', e.code);
+            }
+        } else {
+            console.log('📱 iOS detected - skipping persistence (memory-only mode)');
         }
         
         window.firebaseDB     = db;
@@ -561,6 +571,7 @@ async function pushToCloud() {
     try {
         await window.firebaseSetDoc(docRef, {
             cardContent: cardContent,
+            bookmarks: bookmarks,  // ← ADD bookmarks to sync
             lastSync:    Date.now(),
             deviceId:    DEVICE_ID
         }, { merge: true });
@@ -611,6 +622,7 @@ async function readDatabase() {
             
             // STEP 3: SHOW NEW
             cardContent = cloud.cardContent || {};
+            bookmarks = cloud.bookmarks || {};  // ← Download bookmarks too
             saveLocal(); // Persist to storage
             
             // Reset UI to reflect new data
@@ -1240,16 +1252,180 @@ function shuffle(arr) {
 function safeId(s) { return String(s||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-'); }
 
 // ── KEYBOARD ───────────────────────────────────────────────────────────
+var sidebarNavMode = false;
+var sidebarNavIndex = -1;
+var sidebarNavItems = [];
+
 document.addEventListener('keydown', function(e) {
     var tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    
+    // Sidebar navigation mode
+    if (sidebarNavMode) {
+        handleSidebarNav(e);
+        return;
+    }
+    
     var tab = document.querySelector('.tab-view.active');
     if (!tab || tab.id !== 'tab-flashcard') return;
+    
+    // Flashcard shortcuts
     if (e.code==='Space'||e.code==='Enter')       { e.preventDefault(); flipCard(); }
     else if (e.code==='ArrowRight'||e.code==='KeyJ') { e.preventDefault(); nextCard(true); }
     else if (e.code==='ArrowLeft'||e.code==='KeyF')  { e.preventDefault(); nextCard(false); }
     else if (e.code==='ArrowUp'||e.code==='KeyP')    { e.preventDefault(); nextCard('pass'); }
+    else if (e.code==='KeyB') { e.preventDefault(); toggleBookmark(e); }
+    else if (e.code==='Period'||e.key==='>') { e.preventDefault(); nextContainer(); }
+    else if (e.code==='Comma'||e.key==='<')  { e.preventDefault(); prevContainer(); }
+    else if (e.code==='KeyS') { 
+        e.preventDefault(); 
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('open') && sidebarNavMode) {
+            exitSidebarNavMode();
+            toggleSidebar();
+        } else {
+            enterSidebarNavMode();
+        }
+    }
 });
+
+function nextContainer() {
+    if (!currentSubject || !currentSub) return;
+    var containers = getContainerList();
+    if (containers.length === 0) return;
+    
+    var currentIdx = getCurrentContainerIndex(containers);
+    var nextIdx = (currentIdx + 1) % containers.length;
+    activateContainer(containers[nextIdx]);
+}
+
+function prevContainer() {
+    if (!currentSubject || !currentSub) return;
+    var containers = getContainerList();
+    if (containers.length === 0) return;
+    
+    var currentIdx = getCurrentContainerIndex(containers);
+    var prevIdx = (currentIdx - 1 + containers.length) % containers.length;
+    activateContainer(containers[prevIdx]);
+}
+
+function getContainerList() {
+    var list = [];
+    if (getBookmarkCount() > 0) list.push({type:'bookmarks'});
+    if (missedCardsThisSession.size > 0) list.push({type:'missed'});
+    list.push({type:'all'});
+    
+    if (cardContent[currentSubject] && cardContent[currentSubject][currentSub]) {
+        var num = Math.ceil(cardContent[currentSubject][currentSub].length / CARDS_PER_CONTAINER);
+        for (var i = 0; i < num; i++) {
+            list.push({type:'container', id:i});
+        }
+    }
+    return list;
+}
+
+function getCurrentContainerIndex(containers) {
+    for (var i = 0; i < containers.length; i++) {
+        var c = containers[i];
+        if (reviewBookmarksMode && c.type === 'bookmarks') return i;
+        if (reviewMissedMode && c.type === 'missed') return i;
+        if (!reviewBookmarksMode && !reviewMissedMode && c.type === 'all' && currentContainer === 'all') return i;
+        if (!reviewBookmarksMode && !reviewMissedMode && c.type === 'container' && currentContainer === c.id) return i;
+    }
+    return 0;
+}
+
+function activateContainer(container) {
+    if (container.type === 'bookmarks') toggleReviewBookmarks();
+    else if (container.type === 'missed') toggleReviewMissed();
+    else if (container.type === 'all') selectContainer('all');
+    else if (container.type === 'container') selectContainer(container.id);
+}
+
+// ── SIDEBAR NAVIGATION ─────────────────────────────────────────────────
+function enterSidebarNavMode() {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar.classList.contains('open')) {
+        toggleSidebar();
+    }
+    
+    sidebarNavMode = true;
+    sidebarNavIndex = 0;
+    buildSidebarNavList();
+    highlightSidebarItem();
+}
+
+function exitSidebarNavMode() {
+    sidebarNavMode = false;
+    sidebarNavIndex = -1;
+    clearSidebarHighlights();
+}
+
+function buildSidebarNavList() {
+    sidebarNavItems = [];
+    var subjects = document.querySelectorAll('.subject-title');
+    subjects.forEach(function(el) {
+        sidebarNavItems.push({type:'subject', element:el});
+        var parent = el.closest('.subject-item');
+        if (parent && parent.classList.contains('expanded')) {
+            var topics = parent.querySelectorAll('.sub-item');
+            topics.forEach(function(topic) {
+                sidebarNavItems.push({type:'topic', element:topic});
+            });
+        }
+    });
+}
+
+function highlightSidebarItem() {
+    clearSidebarHighlights();
+    if (sidebarNavIndex >= 0 && sidebarNavIndex < sidebarNavItems.length) {
+        var item = sidebarNavItems[sidebarNavIndex];
+        item.element.style.outline = '2px solid #fff';
+        item.element.style.outlineOffset = '2px';
+        item.element.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }
+}
+
+function clearSidebarHighlights() {
+    sidebarNavItems.forEach(function(item) {
+        item.element.style.outline = '';
+        item.element.style.outlineOffset = '';
+    });
+}
+
+function handleSidebarNav(e) {
+    if (e.code === 'Escape') {
+        e.preventDefault();
+        exitSidebarNavMode();
+        toggleSidebar();
+        return;
+    }
+    
+    if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        sidebarNavIndex = Math.min(sidebarNavIndex + 1, sidebarNavItems.length - 1);
+        highlightSidebarItem();
+    }
+    else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        sidebarNavIndex = Math.max(sidebarNavIndex - 1, 0);
+        highlightSidebarItem();
+    }
+    else if (e.code === 'Enter') {
+        e.preventDefault();
+        if (sidebarNavIndex >= 0 && sidebarNavIndex < sidebarNavItems.length) {
+            var item = sidebarNavItems[sidebarNavIndex];
+            if (item.type === 'subject') {
+                item.element.click(); // Expand/collapse subject
+                buildSidebarNavList(); // Rebuild list after expansion
+                highlightSidebarItem();
+            } else if (item.type === 'topic') {
+                item.element.querySelector('span').click(); // Load topic
+                exitSidebarNavMode();
+            }
+        }
+    }
+}
 
 // ── INIT ───────────────────────────────────────────────────────────────
 renderSidebar();
