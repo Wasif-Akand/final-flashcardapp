@@ -8,12 +8,9 @@
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash</title>
 
-    <!-- Firebase SDK — Lazy Load on Demand -->
     <script>
-        // Firebase will be loaded when user needs to sync
-        window.firebaseReady = false;
-        window.firebaseLoading = false;
-        window.firebaseAttempted = false;
+        // Cloudflare Worker URL - Simple HTTP sync (no Firebase SDK)
+        const WORKER_URL = 'https://monoflash.wasif-akand08.workers.dev';
     </script>
 
     <style>
@@ -243,9 +240,6 @@
             </button>
             <button class="sync-btn" style="margin-bottom:0;width:48px;flex:none;font-size:1.2rem;padding:12px 0;" onclick="changeSyncId()" title="Change Device ID">🔗</button>
         </div>
-        <button class="sync-btn" onclick="retryFirebase()" id="reconnect-btn" style="display:none;background:var(--warn);border-color:var(--warn);">
-            <span>🔄 Reconnect</span>
-        </button>
         <div class="device-id">ID: <span id="current-device-id">…</span></div>
         <div class="sync-help" id="sync-help">Offline mode - sync loads on demand</div>
     </div>
@@ -334,11 +328,6 @@ function getDeviceId() {
     return id;
 }
 
-function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-}
-
 var DEVICE_ID = getDeviceId();
 document.getElementById('current-device-id').textContent = DEVICE_ID;
 
@@ -347,183 +336,7 @@ function changeSyncId() {
     if (n && n.trim()) { localStorage.setItem('monoFlashDeviceId', n.trim()); alert('Linked! Reloading…'); location.reload(); }
 }
 
-// ── LAZY FIREBASE LOADER ───────────────────────────────────────────────
-var firebaseLoadTimeout = null;
-
-async function loadFirebase() {
-    if (window.firebaseReady) {
-        console.log('✅ Firebase already loaded');
-        updateSyncUI('ready');
-        return true;
-    }
-    
-    if (window.firebaseLoading) {
-        console.log('⏳ Firebase already loading...');
-        return false;
-    }
-
-    console.log('🔄 Starting Firebase load...');
-    window.firebaseLoading = true;
-    window.firebaseAttempted = true;
-    
-    setDot('syncing');
-    setRing(10);
-    syncHelpEl.textContent = 'Loading Firebase modules...';
-    
-    // Network detection
-    if (!navigator.onLine) {
-        console.log('📡 Device appears offline, waiting for network...');
-        syncHelpEl.textContent = 'Waiting for network...';
-        
-        // Wait for online event (max 15 seconds)
-        var networkReady = await new Promise(function(resolve) {
-            var timeout = setTimeout(function() { resolve(false); }, 15000);
-            
-            if (navigator.onLine) {
-                clearTimeout(timeout);
-                resolve(true);
-            } else {
-                window.addEventListener('online', function onOnline() {
-                    clearTimeout(timeout);
-                    window.removeEventListener('online', onOnline);
-                    resolve(true);
-                }, { once: true });
-            }
-        });
-        
-        if (!networkReady) {
-            console.log('❌ Network timeout');
-            setDot('error');
-            syncHelpEl.textContent = 'Network unavailable - Try Reconnect';
-            showReconnectBtn();
-            window.firebaseLoading = false;
-            return false;
-        }
-    }
-    
-    setRing(30);
-    syncHelpEl.textContent = 'Downloading Firebase SDK...';
-    
-    // Set timeout for Firebase load (15 seconds)
-    firebaseLoadTimeout = setTimeout(function() {
-        if (!window.firebaseReady) {
-            console.log('⏱️ Firebase load timeout');
-            setDot('error');
-            syncHelpEl.textContent = 'Connection timeout - Try Reconnect';
-            showReconnectBtn();
-            window.firebaseLoading = false;
-        }
-    }, 15000);
-    
-    try {
-        setRing(50);
-        
-        // Dynamic import Firebase modules
-        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-        const { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence } = 
-            await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        
-        setRing(70);
-        syncHelpEl.textContent = 'Initializing Firebase...';
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXul0bzX2-X9qj3t51u6EjhZFFE7mi1ac",
-            authDomain: "flashcards-fb9ab.firebaseapp.com",
-            projectId: "flashcards-fb9ab",
-            storageBucket: "flashcards-fb9ab.firebasestorage.app",
-            messagingSenderId: "975345059409",
-            appId: "1:975345059409:web:fb9048868da5afe6f45a70"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db  = getFirestore(app);
-        
-        setRing(90);
-        
-        // Try to enable persistence (skip on iOS due to WebKit bugs in iOS 15.x)
-        if (!isIOS()) {
-            try {
-                await enableIndexedDbPersistence(db);
-                console.log('💾 Persistence enabled');
-            } catch(e) {
-                console.log('⚠️ Persistence not available:', e.code);
-            }
-        } else {
-            console.log('📱 iOS detected - skipping persistence (memory-only mode)');
-        }
-        
-        window.firebaseDB     = db;
-        window.firebaseDoc    = doc;
-        window.firebaseSetDoc = setDoc;
-        window.firebaseGetDoc = getDoc;
-        window.firebaseReady  = true;
-        window.firebaseLoading = false;
-        
-        clearTimeout(firebaseLoadTimeout);
-        setRing(100);
-        setDot('online');
-        syncHelpEl.textContent = '✅ Connected - Ready to sync';
-        hideReconnectBtn();
-        
-        console.log('✅ Firebase ready');
-        
-        // Auto-hide success message after 3 seconds
-        setTimeout(function() {
-            if (dotEl.className.includes('online')) {
-                setDot('offline');
-                syncHelpEl.textContent = 'Ready to sync';
-            }
-        }, 3000);
-        
-        return true;
-        
-    } catch (err) {
-        console.error('❌ Firebase load failed:', err);
-        clearTimeout(firebaseLoadTimeout);
-        setDot('error');
-        syncHelpEl.textContent = 'Failed to load - Try Reconnect';
-        showReconnectBtn();
-        window.firebaseLoading = false;
-        window.firebaseReady = false;
-        return false;
-    }
-}
-
-function showReconnectBtn() {
-    document.getElementById('reconnect-btn').style.display = 'flex';
-}
-
-function hideReconnectBtn() {
-    document.getElementById('reconnect-btn').style.display = 'none';
-}
-
-async function retryFirebase() {
-    console.log('🔄 Manual reconnect triggered');
-    window.firebaseReady = false;
-    window.firebaseLoading = false;
-    window.firebaseAttempted = false;
-    hideReconnectBtn();
-    await loadFirebase();
-}
-
-function updateSyncUI(state) {
-    switch(state) {
-        case 'ready':
-            setDot('online');
-            syncHelpEl.textContent = '✅ Ready to sync';
-            hideReconnectBtn();
-            break;
-        case 'loading':
-            setDot('syncing');
-            syncHelpEl.textContent = 'Loading Firebase...';
-            break;
-        case 'error':
-            setDot('error');
-            syncHelpEl.textContent = 'Connection failed';
-            showReconnectBtn();
-            break;
-    }
-}
+// ── CLOUDFLARE SYNC (No Firebase SDK needed) ────────────────────────
 
 // ── SYNC UI ────────────────────────────────────────────────────────────
 var CIRC = 2 * Math.PI * 9;
@@ -552,30 +365,30 @@ var CARDS_PER_CONTAINER = 20;
 var currentContainer = 'all', reviewMissedMode = false, reviewBookmarksMode = false;
 var missedCardsThisSession = new Set();
 
-// ── MANUAL SYNC (WITH LAZY FIREBASE LOAD) ─────────────────────────────
+// ── CLOUDFLARE SYNC FUNCTIONS ──────────────────────────────────────────
 async function pushToCloud() {
-    // Lazy load Firebase first
-    var loaded = await loadFirebase();
-    if (!loaded || !window.firebaseReady || !window.firebaseDB) {
-        alert("Unable to connect to Firebase. Check network and try Reconnect.");
-        return;
-    }
-    
     setDot('syncing'); setRing(20);
     syncTextEl.textContent = 'Pushing...';
-    syncHelpEl.textContent = 'Uploading local data...';
-
-    var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-    setRing(50);
+    syncHelpEl.textContent = 'Uploading to Cloudflare...';
 
     try {
-        await window.firebaseSetDoc(docRef, {
-            cardContent: cardContent,
-            bookmarks: bookmarks,  // ← ADD bookmarks to sync
-            lastSync:    Date.now(),
-            deviceId:    DEVICE_ID
-        }, { merge: true });
+        setRing(50);
+        const response = await fetch(WORKER_URL + '?deviceId=' + encodeURIComponent(DEVICE_ID), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cardContent: cardContent,
+                bookmarks: bookmarks
+            })
+        });
+
+        setRing(70);
+        const result = await response.json();
         
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Upload failed');
+        }
+
         setRing(100); setDot('online');
         syncTextEl.textContent = 'Push to Cloud';
         syncHelpEl.textContent = '✅ Uploaded successfully';
@@ -584,48 +397,44 @@ async function pushToCloud() {
             syncHelpEl.textContent = 'Ready to sync';
         }, 2000);
     } catch(err) {
-        console.error('Push failed:', err.code, err.message);
+        console.error('Push failed:', err);
         setDot('error');
-        syncHelpEl.textContent = 'Upload failed: ' + err.code;
-        showReconnectBtn();
+        syncHelpEl.textContent = 'Upload failed: ' + err.message;
     }
 }
 
 function manualSync() { pushToCloud(); }
 
 async function readDatabase() {
-    // Lazy load Firebase first
-    var loaded = await loadFirebase();
-    if (!loaded || !window.firebaseReady || !window.firebaseDB) {
-        alert('Unable to connect to Firebase. Check network and try Reconnect.');
-        return;
-    }
-    
     var btn = document.getElementById('read-text');
     var help = document.getElementById('sync-help');
     
     btn.textContent = '⏳ Downloading...';
-    help.textContent = 'Deleting local & fetching...';
+    help.textContent = 'Fetching from Cloudflare...';
     setDot('syncing'); setRing(20);
 
     try {
-        // STEP 1: DELETE LOCAL (Clear memory)
-        cardContent = {};
-        
-        // STEP 2: DOWNLOAD
-        var docRef = window.firebaseDoc(window.firebaseDB, 'flashcards', DEVICE_ID);
-        var snap = await window.firebaseGetDoc(docRef);
-        setRing(70);
+        setRing(40);
+        const response = await fetch(WORKER_URL + '?deviceId=' + encodeURIComponent(DEVICE_ID), {
+            method: 'GET'
+        });
 
-        if (snap.exists()) {
-            var cloud = snap.data();
+        setRing(60);
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Download failed');
+        }
+
+        setRing(80);
+
+        if (result.exists && result.data) {
+            // Clear local and replace with cloud data
+            cardContent = result.data.cardContent || {};
+            bookmarks = result.data.bookmarks || {};
+            saveLocal();
             
-            // STEP 3: SHOW NEW
-            cardContent = cloud.cardContent || {};
-            bookmarks = cloud.bookmarks || {};  // ← Download bookmarks too
-            saveLocal(); // Persist to storage
-            
-            // Reset UI to reflect new data
+            // Reset UI
             renderSidebar();
             loadSidebarState();
             currentSubject = null; currentSub = null;
@@ -645,7 +454,6 @@ async function readDatabase() {
         help.textContent = 'Error: ' + err.message;
         btn.textContent = '❌ Error';
         setDot('error');
-        showReconnectBtn();
     }
 
     setTimeout(function() { 
@@ -1434,7 +1242,7 @@ loadSidebarState();
 // Initial UI state
 setDot('offline');
 syncHelpEl.textContent = 'Offline mode - sync loads on demand';
-console.log('✅ App loaded - Firebase will load when needed');
+console.log('✅ MonoFlash loaded - Cloudflare sync ready');
 </script>
 </body>
 </html>
