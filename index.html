@@ -84,6 +84,10 @@
         .device-id{font-size:.65rem;color:var(--dimmer);margin-top:8px;text-align:center;font-family:monospace;padding:6px;background:rgba(0,0,0,.3);border-radius:4px;word-break:break-all;}
         .sync-help{font-size:.65rem;color:var(--dimmer);text-align:center;margin-top:6px;line-height:1.3;}
         
+        .sb-home-btn-subtle{all:unset;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px 8px;cursor:pointer;color:var(--text);font-size:.85rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:all var(--tf);border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;}
+        .sb-home-btn-subtle:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);box-shadow:0 4px 12px rgba(0,0,0,.5);transform:translateY(-1px);}
+        .sb-home-btn-subtle:active{transform:scale(.96);}
+        
         .add-btn{padding:12px;border:1px dashed var(--border-b);text-align:center;margin:8px 8px 12px;cursor:pointer;color:var(--dim);border-radius:8px;font-size:.85rem;font-weight:600;letter-spacing:.5px;transition:all var(--tf);text-transform:uppercase;}
         .add-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(255,255,255,.03);}
 
@@ -97,8 +101,8 @@
         #content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;position:relative;}
         #content-area::-webkit-scrollbar{width:6px;}
         #content-area::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:3px;}
-        .tab-view{display:none;height:100%;animation:fadeIn .4s cubic-bezier(.4,0,.2,1);}
-        .tab-view.active{display:flex;flex-direction:column;}
+        .tab-view{display:none;height:100%;animation:fadeIn .4s cubic-bezier(.4,0,.2,1);flex-direction:column;}
+        .tab-view.active{display:flex;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
         /* FLASHCARD */
@@ -109,7 +113,7 @@
         .bookmark-icon{position:absolute;top:12px;right:12px;font-size:1.5rem;cursor:pointer;z-index:10;transition:all .25s cubic-bezier(.4,0,.2,1);user-select:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
         .bookmark-icon:hover{transform:scale(1.2) rotate(-10deg);filter:drop-shadow(0 4px 8px rgba(0,0,0,.8));}
         .bookmark-icon.active{filter:drop-shadow(0 0 8px rgba(255,215,0,.6));}
-        .card-container{flex:1;display:flex;justify-content:center;align-items:center;perspective:1600px;padding:20px 0;}
+        .card-container{flex:1;display:flex;justify-content:center;align-items:center;perspective:1600px;padding:20px 0;min-height:320px;}
         .card{width:100%;max-width:380px;height:280px;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1),box-shadow var(--tn);cursor:pointer;box-shadow:var(--sh-lg);}
         .card:hover{box-shadow:0 12px 48px rgba(0,0,0,1),0 0 0 1px rgba(255,255,255,.1);transform:translateY(-4px) scale(1.01);}
         .card.flipped{transform:rotateY(180deg) scale(1.02);}
@@ -118,7 +122,7 @@
         .card-face::-webkit-scrollbar{width:4px;}
         .card-face::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
         .card-back{transform:rotateY(180deg);background:#050505;border-color:var(--accent);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),0 0 32px rgba(255,255,255,.15),0 0 64px rgba(255,255,255,.05);}
-        .controls{display:flex;gap:12px;justify-content:center;margin-top:24px;padding:0 20px;}
+        .controls{display:flex;gap:12px;justify-content:center;margin-top:20px;padding:0 20px;flex-shrink:0;min-height:56px;}
         .btn{padding:14px 28px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.95rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;position:relative;}
         .btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
         .btn:active{transform:translateY(0) scale(.97);box-shadow:var(--sh-sm);transition:all .1s;}
@@ -128,13 +132,15 @@
         :focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
 
         /* CONTAINERS */
-        .cont-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:10px;border:1px solid var(--border-b);border-radius:10px;background:var(--surface-el);box-shadow:inset 0 2px 4px rgba(0,0,0,.3);overflow:hidden;transition:all .3s cubic-bezier(.4,0,.2,1);}
+        .cont-selector{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;padding:10px;border:1px solid var(--border-b);border-radius:10px;background:var(--surface-el);box-shadow:inset 0 2px 4px rgba(0,0,0,.3);overflow:hidden;transition:all .3s cubic-bezier(.4,0,.2,1);max-height:400px;}
         .cont-selector.collapsed{padding:0;max-height:48px;}
-        .cont-header{width:100%;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);transition:all .2s;user-select:none;}
+        .cont-header{padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);transition:all .2s;user-select:none;flex-shrink:0;}
         .cont-header:hover{color:var(--text);background:rgba(255,255,255,.03);}
         .cont-chevron{font-size:.7rem;transition:transform .3s cubic-bezier(.4,0,.2,1);}
         .cont-selector.collapsed .cont-chevron{transform:rotate(-90deg);}
-        .cont-buttons{display:flex;gap:6px;flex-wrap:wrap;width:100%;transition:all .3s cubic-bezier(.4,0,.2,1);}
+        .cont-buttons{display:flex;gap:6px;flex-wrap:wrap;width:100%;transition:all .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;overflow-x:hidden;max-height:300px;padding-right:6px;}
+        .cont-buttons::-webkit-scrollbar{width:4px;}
+        .cont-buttons::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
         .cont-selector.collapsed .cont-buttons{display:none;}
         .cont-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--dim);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.5px;transition:all var(--tf);white-space:nowrap;text-transform:uppercase;user-select:none;}
         .cont-btn:hover{background:var(--surface-el);color:var(--text);border-color:var(--border-b);transform:translateY(-1px);}
@@ -195,6 +201,67 @@
         #overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);z-index:900;display:none;}
         #overlay.show{display:block;animation:fadeIn var(--tn);}
 
+        /* ONBOARDING */
+        #onboarding{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:2000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+        #onboarding.show{display:flex;animation:fadeIn .5s cubic-bezier(.4,0,.2,1);}
+        .onboarding-modal{background:linear-gradient(135deg,var(--surface-el) 0%,var(--surface) 100%);border:1px solid var(--border-b);border-radius:16px;padding:40px;max-width:450px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(255,255,255,.1);text-align:center;animation:slideUp .5s cubic-bezier(.4,0,.2,1);}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .onboarding-title{font-size:1.8rem;font-weight:800;margin-bottom:12px;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px;}
+        .onboarding-subtitle{font-size:.95rem;color:var(--dim);margin-bottom:32px;line-height:1.6;}
+        .onboarding-input-group{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;}
+        .onboarding-label{font-size:.85rem;font-weight:600;color:var(--text);text-align:left;letter-spacing:.5px;text-transform:uppercase;}
+        .onboarding-input{width:100%;padding:12px 16px;background:var(--surface);color:var(--text);border:1px solid var(--border-b);border-radius:10px;font-size:.95rem;font-family:inherit;transition:all var(--tf);}
+        .onboarding-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,255,255,.1);}
+        .onboarding-input::placeholder{color:var(--dimmer);}
+        .onboarding-buttons{display:flex;gap:12px;flex-direction:column;}
+        .onboarding-btn{padding:13px 20px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+        .onboarding-btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9);border-color:var(--accent);}
+        .onboarding-btn:active{transform:translateY(0) scale(.97);}
+        .onboarding-btn-primary{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border:none;box-shadow:0 4px 16px rgba(255,255,255,.1);}
+        .onboarding-btn-primary:hover{background:linear-gradient(135deg,#f5f5f5 0%,#bbb 100%);box-shadow:0 8px 24px rgba(255,255,255,.15);}
+        .onboarding-info{font-size:.75rem;color:var(--dimmer);margin-top:16px;line-height:1.5;}
+        .onboarding-info strong{color:var(--dim);}
+
+        /* HOME SECTION */
+        .home-content{display:flex;flex-direction:column;gap:24px;padding:8px 0;}
+        .home-hero{text-align:center;padding:32px 0;background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,rgba(0,0,0,.3) 100%);border-radius:16px;border:1px solid var(--border-b);margin-bottom:16px;}
+        .home-title{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#fff 0%,#aaa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;letter-spacing:-1px;}
+        .home-subtitle{font-size:1rem;color:var(--dim);margin-bottom:20px;line-height:1.6;}
+        .home-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+        .home-btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);}
+        .home-btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
+        .home-btn:active{transform:translateY(0) scale(.97);}
+        .home-btn-primary{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border:none;box-shadow:0 4px 16px rgba(255,255,255,.1);}
+        .home-btn-primary:hover{background:linear-gradient(135deg,#f5f5f5 0%,#bbb 100%);box-shadow:0 8px 24px rgba(255,255,255,.15);}
+        .home-section{display:flex;flex-direction:column;gap:12px;padding:24px;background:var(--surface-el);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh-sm);}
+        .home-sec-title{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;display:flex;gap:8px;align-items:center;}
+        .home-sec-icon{font-size:1.3rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+        .home-item{padding:8px 0;color:var(--dim);font-size:.9rem;line-height:1.5;display:flex;gap:10px;align-items:flex-start;}
+        .home-item-bullet{color:var(--accent);font-weight:700;flex-shrink:0;margin-top:2px;}
+        .home-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px;}
+        .home-stat-card{background:var(--surface);border:1px solid var(--border-b);border-radius:10px;padding:16px;text-align:center;}
+        .home-stat-num{font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:4px;}
+        .home-stat-label{font-size:.7rem;color:var(--dimmer);text-transform:uppercase;letter-spacing:.5px;}
+        .home-subjects{display:flex;flex-direction:column;gap:10px;margin-top:12px;max-height:300px;overflow-y:auto;}
+        .home-subjects::-webkit-scrollbar{width:4px;}
+        .home-subjects::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
+        .home-subject-item{padding:12px 14px;background:var(--surface);border:1px solid var(--border-b);border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+        .home-subject-name{font-weight:600;color:#fff;font-size:.9rem;}
+        .home-subject-count{font-size:.75rem;color:var(--dimmer);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:6px;font-weight:600;}
+        .home-no-subjects{color:var(--dimmer);font-size:.9rem;padding:20px;text-align:center;}
+        .home-tips{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+        .home-tip{padding:12px;background:rgba(255,255,255,.03);border-left:3px solid var(--accent);border-radius:6px;color:var(--dim);font-size:.85rem;line-height:1.5;}
+        .home-tip strong{color:var(--text);font-weight:600;}
+
+
+        /* NAV VISIBILITY */
+        nav{display:none;}
+        nav.show{display:flex;}
+        
+        .home-btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+        .home-btn-group .home-btn{flex:1;min-width:120px;}
+        .home-db-sub{color:var(--dim);font-size:.85rem;margin-bottom:12px;line-height:1.4;}
+
         /* RESPONSIVE */
         @media(max-width:480px){
             #sidebar{width:260px;left:-260px;}
@@ -215,10 +282,30 @@
 
 <div id="overlay" onclick="toggleSidebar()"></div>
 
+<div id="onboarding">
+    <div class="onboarding-modal">
+        <div class="onboarding-title">Welcome to MonoFlash</div>
+        <div class="onboarding-subtitle">Your personal flashcard companion with cloud sync</div>
+        
+        <div class="onboarding-input-group">
+            <label class="onboarding-label">Sync Device ID</label>
+            <input type="text" id="onboarding-device-id" class="onboarding-input" placeholder="e.g., my-phone-123" maxlength="50">
+            <div class="onboarding-info">Leave blank to auto-generate • Use the same ID on all your devices to sync</div>
+        </div>
+        
+        <div class="onboarding-buttons">
+            <button class="onboarding-btn onboarding-btn-primary" onclick="completeOnboarding()">Get Started</button>
+        </div>
+    </div>
+</div>
+
 <aside id="sidebar">
     <div class="sb-head">
         <div class="sb-title">MonoFlash</div>
         <div class="sb-sub">📦 Cards sync manual<br>📊 Progress stays local</div>
+    </div>
+    <div style="padding:8px 12px;border-bottom:1px solid var(--border-b);text-align:center;">
+        <button class="sb-home-btn-subtle" onclick="switchToHome()">🏠 Home</button>
     </div>
     <div class="sb-content" id="subject-list"></div>
     <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
@@ -252,7 +339,156 @@
     </header>
     <section id="content-area">
 
-        <div id="tab-flashcard" class="tab-view active">
+        <div id="tab-home" class="tab-view active">
+            <div class="home-content">
+                <div class="home-hero">
+                    <div class="home-title">Welcome to MonoFlash</div>
+                    <div class="home-subtitle">Master knowledge with intelligent spaced repetition</div>
+                    <div class="home-cta">
+                        <button class="home-btn home-btn-primary" onclick="createQuickStart()">Quick Start</button>
+                        <button class="home-btn" onclick="toggleSidebar()">Browse Topics</button>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">📈</span>
+                        <span>Your Progress</span>
+                    </div>
+                    <div class="home-stats-grid" id="home-stats-grid">
+                        <div class="home-stat-card">
+                            <div class="home-stat-num" id="home-stat-total-subjects">0</div>
+                            <div class="home-stat-label">Subjects</div>
+                        </div>
+                        <div class="home-stat-card">
+                            <div class="home-stat-num" id="home-stat-total-topics">0</div>
+                            <div class="home-stat-label">Topics</div>
+                        </div>
+                        <div class="home-stat-card">
+                            <div class="home-stat-num" id="home-stat-total-cards">0</div>
+                            <div class="home-stat-label">Cards</div>
+                        </div>
+                        <div class="home-stat-card">
+                            <div class="home-stat-num" id="home-stat-accuracy">-</div>
+                            <div class="home-stat-label">Accuracy</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">📚</span>
+                        <span>Your Subjects</span>
+                    </div>
+                    <div class="home-subjects" id="home-subjects-list">
+                        <div class="home-no-subjects">No subjects yet. Create one to begin!</div>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">🌐</span>
+                        <span>Backup & Restore</span>
+                    </div>
+                    <p class="home-db-sub">Export or import ALL subjects, topics, and cards in one file</p>
+                    <input id="full-backup-input" type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
+                    <div class="home-btn-group">
+                        <button class="home-btn" onclick="exportFullBackup()">📦 Export ALL Data</button>
+                        <button class="home-btn" onclick="document.getElementById('full-backup-input').click()">📥 Import ALL Data</button>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">⚙️</span>
+                        <span>Data Management</span>
+                    </div>
+                    <div class="home-btn-group">
+                        <button class="home-btn" onclick="resetAllData()" style="background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.5);color:#e74c3c;">🗑️ Clear All Data</button>
+                        <button class="home-btn" onclick="downloadDatabaseJson()">💾 Download JSON</button>
+                    </div>
+                    <p class="home-db-sub" style="margin-top:12px;color:var(--warn);">⚠️ "Clear All Data" will delete everything. Use "Export ALL Data" first to backup!</p>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">✨</span>
+                        <span>Getting Started</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">1.</span>
+                        <span>Create a <strong>Subject</strong> (e.g., "Biology") using the + Add Subject button</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">2.</span>
+                        <span>Add a <strong>Topic</strong> within your subject (e.g., "Cell Structure")</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">3.</span>
+                        <span>Import or create <strong>Cards</strong> using the Data tab</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">4.</span>
+                        <span>Review cards daily and let <strong>Spaced Repetition</strong> optimize your learning</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">5.</span>
+                        <span>Use <strong>Containers</strong> to focus on specific sections or missed cards</span>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">💡</span>
+                        <span>Tips & Tricks</span>
+                    </div>
+                    <div class="home-tips">
+                        <div class="home-tip"><strong>Keyboard Shortcuts:</strong> Space to flip • J to Got it • F to Missed • P to Pass • B for Bookmark • S for Sidebar</div>
+                        <div class="home-tip"><strong>Cloud Sync:</strong> Push to Cloud button syncs your cards. Use the same Device ID on all devices to sync data</div>
+                        <div class="home-tip"><strong>Spaced Repetition:</strong> Cards due today appear first. Master cards (7+ days) are shown in Stats</div>
+                        <div class="home-tip"><strong>Bookmarks:</strong> Star important cards for quick review. Filter by bookmarks in the Containers menu</div>
+                        <div class="home-tip"><strong>Missed Cards:</strong> Cards you missed during a session are grouped for easy review</div>
+                    </div>
+                </div>
+
+                <div class="home-section">
+                    <div class="home-sec-title">
+                        <span class="home-sec-icon">✨</span>
+                        <span>Features</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Spaced Repetition (SRS)</strong> - SM-2 algorithm for optimal learning intervals</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Cloud Sync</strong> - Push/pull your cards via Cloudflare Workers</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Bookmarks</strong> - Mark important cards for focused review</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Containers</strong> - Organize cards into manageable chunks</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Analytics</strong> - Track accuracy and mastered cards</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Flexible Input</strong> - Import via text, JSON, or files</span>
+                    </div>
+                    <div class="home-item">
+                        <span class="home-item-bullet">•</span>
+                        <span><strong>Mobile Ready</strong> - Study on any device with offline support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-flashcard" class="tab-view">
             <div class="progress-text" id="progress-text" style="display:none;">1 / 0</div>
             <div class="progress-bar-wrap" id="progress-wrap" style="display:none;">
                 <div class="progress-bar" id="progress-bar"></div>
@@ -288,14 +524,7 @@
         </div>
 
         <div id="tab-database" class="tab-view">
-            <h3 class="db-sec-title">🌐 Full Backup / Restore</h3>
-            <p class="db-sub">Export or import ALL subjects, topics, and cards in one file</p>
-            <input id="full-backup-input" type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
-            <div class="db-btn-group">
-                <button class="btn btn-primary" onclick="exportFullBackup()">📦 Export ALL Data</button>
-                <button class="btn" onclick="document.getElementById('full-backup-input').click()">📥 Import ALL Data</button>
-            </div>
-            <h3 class="db-sec-title" style="margin-top:32px;">➕ Add Cards to Current Topic</h3>
+            <h3 class="db-sec-title">➕ Add Cards to Current Topic</h3>
             <p class="db-sub">Format: Question -!- Answer (one per line)<br>OR JSON: [{"q":"Front","a":"Back"}]</p>
             <textarea id="json-input" placeholder='What is gravity? -!- Force that attracts objects
 What is speed? -!- Distance over time'></textarea>
@@ -321,7 +550,42 @@ What is speed? -!- Distance over time'></textarea>
 </main>
 
 <script>
-// ── DEVICE ID ──────────────────────────────────────────────────────────
+// ── DEVICE ID & ONBOARDING ────────────────────────────────────────────
+function hasCompletedOnboarding() {
+    return localStorage.getItem('monoFlashOnboardingComplete') === 'true';
+}
+
+function showOnboarding() {
+    var modal = document.getElementById('onboarding');
+    if (modal) modal.classList.add('show');
+}
+
+function hideOnboarding() {
+    var modal = document.getElementById('onboarding');
+    if (modal) modal.classList.remove('show');
+}
+
+function completeOnboarding() {
+    var input = document.getElementById('onboarding-device-id');
+    var deviceId = input.value.trim();
+    
+    if (deviceId) {
+        // User provided a custom ID
+        localStorage.setItem('monoFlashDeviceId', deviceId);
+    } else {
+        // Auto-generate device ID
+        var id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+        localStorage.setItem('monoFlashDeviceId', id);
+    }
+    
+    // Mark onboarding as complete
+    localStorage.setItem('monoFlashOnboardingComplete', 'true');
+    
+    // Reload to refresh with new device ID
+    hideOnboarding();
+    location.reload();
+}
+
 function getDeviceId() {
     let id = localStorage.getItem('monoFlashDeviceId');
     if (!id) { id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2,9); localStorage.setItem('monoFlashDeviceId', id); }
@@ -438,8 +702,10 @@ async function readDatabase() {
             renderSidebar();
             loadSidebarState();
             currentSubject = null; currentSub = null;
-            document.getElementById('header-title').textContent = 'Select a Subject';
+            document.getElementById('header-title').textContent = 'Home';
             renderCard();
+            updateHomeStats();
+            renderHomeSubjects();
 
             btn.textContent = '✅ Done';
             help.textContent = 'Data replaced from cloud';
@@ -568,24 +834,44 @@ function toggleSidebar() {
 }
 function addNewSubject() {
     var name = prompt('New Subject name:');
-    if (name && name.trim()) { var t = name.trim(); if (!cardContent[t]) { cardContent[t] = {}; saveData(); renderSidebar(); loadSidebarState(); } }
+    if (name && name.trim()) { 
+        var t = name.trim(); 
+        if (!cardContent[t]) { 
+            cardContent[t] = {}; 
+            saveData(); 
+            renderSidebar(); 
+            loadSidebarState(); 
+            updateHomeStats();
+            renderHomeSubjects();
+        } 
+    }
 }
 function addNewSub(subj) {
     var name = prompt('New Topic name for "' + subj + '":');
-    if (name && name.trim()) { var t = name.trim(); if (!cardContent[subj][t]) { cardContent[subj][t] = []; saveData(); renderSidebar(); loadSidebarState(); } }
+    if (name && name.trim()) { 
+        var t = name.trim(); 
+        if (!cardContent[subj][t]) { 
+            cardContent[subj][t] = []; 
+            saveData(); 
+            renderSidebar(); 
+            loadSidebarState(); 
+            updateHomeStats();
+            renderHomeSubjects();
+        } 
+    }
 }
 function deleteSubject(subj) {
     if (!confirm('Delete subject "' + subj + '" and all its cards?')) return;
     delete cardContent[subj]; delete srsData[subj];
-    if (currentSubject === subj) { currentSubject = null; currentSub = null; document.getElementById('header-title').textContent = 'Select a Subject'; renderCard(); }
-    saveData(); renderSidebar(); renderDbList();
+    if (currentSubject === subj) { currentSubject = null; currentSub = null; document.getElementById('header-title').textContent = 'Home'; }
+    saveData(); renderSidebar(); renderDbList(); updateHomeStats(); renderHomeSubjects();
 }
 function deleteSub(subj, sub) {
     if (!confirm('Delete topic "' + sub + '" and all its cards?')) return;
     delete cardContent[subj][sub];
     if (srsData[subj]) delete srsData[subj][sub];
     if (currentSubject === subj && currentSub === sub) { currentSub = null; document.getElementById('header-title').textContent = subj; renderCard(); }
-    saveData(); renderSidebar(); renderDbList();
+    saveData(); renderSidebar(); renderDbList(); updateHomeStats(); renderHomeSubjects();
 }
 
 // ── BOOKMARKS ──────────────────────────────────────────────────────────
@@ -651,6 +937,16 @@ function loadTopic(subj, sub) {
     var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
     dueCards = w.filter(function(c){ return isDue(c.srs); });
     shuffledCards = shuffle(dueCards.length ? dueCards : w);
+    
+    // Show nav when topic is selected
+    document.querySelector('nav').classList.add('show');
+    
+    // Switch to flashcard tab
+    document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    document.getElementById('tab-flashcard').classList.add('active');
+    document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+    
     renderCard(); updateStats(); renderDbList(); renderContSel();
     document.querySelectorAll('.sub-item').forEach(function(el){ el.classList.remove('active'); });
     if (event && event.target) { var si = event.target.closest('.sub-item'); if (si) si.classList.add('active'); }
@@ -666,8 +962,8 @@ function renderCard() {
     var progressText = document.getElementById('progress-text');
     
     if (!shuffledCards.length || cardIndex >= shuffledCards.length) {
-        front.textContent = currentSub ? 'No cards available' : 'Select a topic to begin';
-        back.textContent  = currentSub ? 'Add cards in the Data tab' : 'Your journey starts here';
+        front.textContent = currentSub ? 'No cards available' : 'Go to Home to select a topic';
+        back.textContent  = currentSub ? 'Add cards in the Data tab' : 'Browse your subjects';
         progressWrap.style.display = 'none';
         progressText.style.display = 'none';
         document.getElementById('bookmark-icon').style.display = 'none';
@@ -874,7 +1170,7 @@ function doAddCards(newCards) {
         if (existing.some(function(e){ return e.q.trim().toLowerCase() === c.q.trim().toLowerCase(); })) { dupes++; }
         else { existing.push(c); added++; }
     });
-    ensureSRS(); saveData(); renderDbList(); renderSidebar();
+    ensureSRS(); saveData(); renderDbList(); renderSidebar(); updateHomeStats(); renderHomeSubjects();
     var cards = cardContent[currentSubject][currentSub];
     var srs   = srsData[currentSubject][currentSub];
     var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i],_index:i}; });
@@ -914,9 +1210,9 @@ function importFullBackup(e) {
             if (!confirm('📦 Ready to import:\n✓ ' + Object.keys(b.cardContent).length + ' subjects\n✓ ' + total + ' cards\n\nProceed?')) { e.target.value=''; return; }
             cardContent = b.cardContent; srsData = {};
             ensureSRS(); saveData();
-            renderSidebar(); loadSidebarState(); renderDbList();
+            renderSidebar(); loadSidebarState(); renderDbList(); updateHomeStats(); renderHomeSubjects();
             currentSubject = null; currentSub = null;
-            document.getElementById('header-title').textContent = 'Select a Subject';
+            document.getElementById('header-title').textContent = 'Home';
             renderCard();
             alert('✅ Imported! Syncing to cloud…');
         } catch(err) { alert('❌ Failed: ' + err.message); }
@@ -1048,7 +1344,20 @@ function switchTab(name, el) {
     document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
     document.getElementById('tab-' + name).classList.add('active');
     el.classList.add('active');
-    if (name === 'performance') updateStats();
+    
+    if (name === 'home') {
+        switchToHome();
+    } else {
+        // Show nav for other tabs
+        document.querySelector('nav').classList.add('show');
+        if (name === 'flashcard') {
+            document.getElementById('header-title').textContent = currentSubject && currentSub ? currentSubject + ' › ' + currentSub : 'Select a Subject';
+        } else if (name === 'performance') {
+            updateStats();
+        } else if (name === 'database') {
+            renderDbList();
+        }
+    }
 }
 
 // ── UTILS ──────────────────────────────────────────────────────────────
@@ -1235,7 +1544,60 @@ function handleSidebarNav(e) {
     }
 }
 
+// ── QOL FUNCTIONS ───────────────────────────────────────────────────────
+function resetAllData() {
+    if (!confirm('⚠️ THIS WILL DELETE ALL YOUR DATA!\n\nAre you absolutely sure? Use "Export ALL Data" first to backup.')) return;
+    if (!confirm('🔴 Last chance! Delete everything?')) return;
+    
+    // Clear all localStorage
+    localStorage.removeItem('monoFlashCardContent');
+    localStorage.removeItem('monoFlashSRSData');
+    localStorage.removeItem('monoFlashBookmarks');
+    localStorage.removeItem('monoFlashSidebarState');
+    
+    // Reset variables
+    cardContent = {};
+    srsData = {};
+    bookmarks = {};
+    currentSubject = null;
+    currentSub = null;
+    shuffledCards = [];
+    
+    // Update UI
+    renderSidebar();
+    loadSidebarState();
+    switchToHome();
+    updateHomeStats();
+    renderHomeSubjects();
+    
+    alert('✅ All data cleared. Starting fresh!');
+}
+
+function downloadDatabaseJson() {
+    var data = {
+        cardContent: cardContent,
+        srsData: srsData,
+        bookmarks: bookmarks,
+        exportDate: new Date().toISOString()
+    };
+    var ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+    a.download = 'MonoFlash-Database-' + ts + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
 // ── INIT ───────────────────────────────────────────────────────────────
+// Check if onboarding is needed
+if (!hasCompletedOnboarding()) {
+    showOnboarding();
+} else {
+    // Show home by default
+    switchToHome();
+}
+
 renderSidebar();
 loadSidebarState();
 
@@ -1243,6 +1605,158 @@ loadSidebarState();
 setDot('offline');
 syncHelpEl.textContent = 'Offline mode - sync loads on demand';
 console.log('✅ MonoFlash loaded - Cloudflare sync ready');
+
+// ── HOME SECTION ───────────────────────────────────────────────────────
+function switchToHome() {
+    currentSubject = null;
+    currentSub = null;
+    document.getElementById('header-title').textContent = 'Home';
+    
+    // Hide containers when not in flashcard view
+    document.getElementById('cont-selector').style.display = 'none';
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('progress-text').style.display = 'none';
+    
+    // Hide nav when in home
+    document.querySelector('nav').classList.remove('show');
+    
+    updateHomeStats();
+    renderHomeSubjects();
+    
+    // Switch to home tab
+    document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    document.getElementById('tab-home').classList.add('active');
+    // Don't activate any nav item since home is not in the nav bar
+    
+    toggleSidebar();
+}
+
+function updateHomeStats() {
+    // Count subjects, topics, and cards
+    var subjects = Object.keys(cardContent);
+    var subjectCount = subjects.length;
+    var topicCount = 0;
+    var cardCount = 0;
+    
+    subjects.forEach(function(subj) {
+        Object.keys(cardContent[subj]).forEach(function(sub) {
+            topicCount++;
+            cardCount += cardContent[subj][sub].length;
+        });
+    });
+    
+    // Calculate overall accuracy from SRS data
+    var totalReviewed = 0;
+    var totalCorrect = 0;
+    
+    subjects.forEach(function(subj) {
+        var topics = Object.keys(cardContent[subj] || {});
+        topics.forEach(function(sub) {
+            var srs = srsData[subj] && srsData[subj][sub] ? srsData[subj][sub] : [];
+            srs.forEach(function(s) {
+                if (s.lastReviewed) {
+                    totalReviewed++;
+                    if (s.interval > 0) totalCorrect++;
+                }
+            });
+        });
+    });
+    
+    var accuracy = totalReviewed ? Math.round(totalCorrect / totalReviewed * 100) : '-';
+    
+    document.getElementById('home-stat-total-subjects').textContent = subjectCount;
+    document.getElementById('home-stat-total-topics').textContent = topicCount;
+    document.getElementById('home-stat-total-cards').textContent = cardCount;
+    document.getElementById('home-stat-accuracy').textContent = accuracy === '-' ? '-' : accuracy + '%';
+}
+
+function renderHomeSubjects() {
+    var list = document.getElementById('home-subjects-list');
+    var subjects = Object.keys(cardContent);
+    
+    if (subjects.length === 0) {
+        list.innerHTML = '<div class="home-no-subjects">No subjects yet. Create one to begin!</div>';
+        return;
+    }
+    
+    list.innerHTML = '';
+    subjects.forEach(function(subj) {
+        var topics = cardContent[subj];
+        var topicCount = Object.keys(topics).length;
+        var cardCount = 0;
+        
+        Object.keys(topics).forEach(function(topic) {
+            cardCount += topics[topic].length;
+        });
+        
+        var item = document.createElement('div');
+        item.className = 'home-subject-item';
+        
+        var nameDiv = document.createElement('div');
+        var name = document.createElement('div');
+        name.className = 'home-subject-name';
+        name.textContent = subj;
+        var count = document.createElement('div');
+        count.style.cssText = 'color:var(--dimmer);font-size:.8rem;margin-top:2px;';
+        count.textContent = topicCount + ' topic' + (topicCount !== 1 ? 's' : '') + ' • ' + cardCount + ' card' + (cardCount !== 1 ? 's' : '');
+        nameDiv.appendChild(name);
+        nameDiv.appendChild(count);
+        
+        var countBadge = document.createElement('div');
+        countBadge.className = 'home-subject-count';
+        countBadge.textContent = cardCount;
+        
+        item.appendChild(nameDiv);
+        item.appendChild(countBadge);
+        
+        item.onclick = function() {
+            // Expand subject in sidebar
+            var subjectEl = document.querySelector('[onclick*="toggleSubject"][onclick*="' + subj + '"]');
+            if (subjectEl) subjectEl.click();
+        };
+        
+        list.appendChild(item);
+    });
+}
+
+function createQuickStart() {
+    var name = prompt('Enter Subject name (e.g., Biology):');
+    if (!name || !name.trim()) return;
+    
+    var subject = name.trim();
+    if (!cardContent[subject]) {
+        cardContent[subject] = {};
+        saveData();
+        renderSidebar();
+        loadSidebarState();
+        
+        var topicName = prompt('Enter Topic name for "' + subject + '" (e.g., Cell Structure):');
+        if (!topicName || !topicName.trim()) return;
+        
+        var topic = topicName.trim();
+        cardContent[subject][topic] = [];
+        saveData();
+        renderSidebar();
+        loadSidebarState();
+        updateHomeStats();
+        renderHomeSubjects();
+        
+        // Switch to database tab for adding cards
+        setTimeout(function() {
+            currentSubject = subject;
+            currentSub = topic;
+            document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
+            document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+            document.getElementById('tab-database').classList.add('active');
+            document.querySelector('.nav-item:nth-child(4)').classList.add('active');
+            document.getElementById('header-title').textContent = subject + ' › ' + topic;
+            renderDbList();
+        }, 100);
+    } else {
+        alert('Subject already exists!');
+    }
+}
 </script>
 </body>
 </html>
