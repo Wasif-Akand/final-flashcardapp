@@ -945,7 +945,8 @@ function loadTopic(subj, sub) {
     document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
     document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
     document.getElementById('tab-flashcard').classList.add('active');
-    document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+    var navItems = document.querySelectorAll('.nav-item');
+    if (navItems.length > 0) navItems[0].classList.add('active'); // Flashcard tab (1st item)
     
     renderCard(); updateStats(); renderDbList(); renderContSel();
     document.querySelectorAll('.sub-item').forEach(function(el){ el.classList.remove('active'); });
@@ -979,6 +980,8 @@ function renderCard() {
         progressText.textContent = (cardIndex + 1) + ' / ' + shuffledCards.length;
     }
     
+    // Safely access current card
+    if (!shuffledCards[cardIndex]) return;
     front.textContent = shuffledCards[cardIndex].q;
     back.textContent  = shuffledCards[cardIndex].a;
     updateBookmarkIcon();
@@ -1449,7 +1452,8 @@ function getCurrentContainerIndex(containers) {
         if (!reviewBookmarksMode && !reviewMissedMode && c.type === 'all' && currentContainer === 'all') return i;
         if (!reviewBookmarksMode && !reviewMissedMode && c.type === 'container' && currentContainer === c.id) return i;
     }
-    return 0;
+    // If no exact match found, return first container
+    return containers.length > 0 ? 0 : -1;
 }
 
 function activateContainer(container) {
@@ -1533,11 +1537,15 @@ function handleSidebarNav(e) {
         if (sidebarNavIndex >= 0 && sidebarNavIndex < sidebarNavItems.length) {
             var item = sidebarNavItems[sidebarNavIndex];
             if (item.type === 'subject') {
-                item.element.click(); // Expand/collapse subject
-                buildSidebarNavList(); // Rebuild list after expansion
-                highlightSidebarItem();
+                var subjectItem = item.element.closest('.subject-item');
+                if (subjectItem) {
+                    var subjectText = item.element.textContent.trim().split('\n')[0];
+                    toggleSubject(subjectText);
+                    buildSidebarNavList(); // Rebuild list after expansion
+                    highlightSidebarItem();
+                }
             } else if (item.type === 'topic') {
-                item.element.querySelector('span').click(); // Load topic
+                item.element.click(); // Load topic
                 exitSidebarNavMode();
             }
         }
@@ -1710,11 +1718,18 @@ function renderHomeSubjects() {
         item.appendChild(nameDiv);
         item.appendChild(countBadge);
         
-        item.onclick = function() {
-            // Expand subject in sidebar
-            var subjectEl = document.querySelector('[onclick*="toggleSubject"][onclick*="' + subj + '"]');
-            if (subjectEl) subjectEl.click();
-        };
+        item.onclick = (function(subjName) {
+            return function() {
+                // Find and click the subject title element
+                var subjectItems = document.querySelectorAll('.subject-title');
+                for (var i = 0; i < subjectItems.length; i++) {
+                    if (subjectItems[i].textContent.includes(subjName)) {
+                        toggleSubject(subjName);
+                        break;
+                    }
+                }
+            };
+        })(subj);
         
         list.appendChild(item);
     });
@@ -1749,7 +1764,9 @@ function createQuickStart() {
             document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
             document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
             document.getElementById('tab-database').classList.add('active');
-            document.querySelector('.nav-item:nth-child(4)').classList.add('active');
+            document.querySelector('nav').classList.add('show');
+            var navItems = document.querySelectorAll('.nav-item');
+            if (navItems.length >= 4) navItems[3].classList.add('active'); // Database tab (4th item)
             document.getElementById('header-title').textContent = subject + ' › ' + topic;
             renderDbList();
         }, 100);
