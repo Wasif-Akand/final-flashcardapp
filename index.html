@@ -642,6 +642,7 @@ async function pushToCloud() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 cardContent: cardContent,
+                srsData: srsData,
                 bookmarks: bookmarks
             })
         });
@@ -695,6 +696,7 @@ async function readDatabase() {
         if (result.exists && result.data) {
             // Clear local and replace with cloud data
             cardContent = result.data.cardContent || {};
+            srsData = result.data.srsData || {};
             bookmarks = result.data.bookmarks || {};
             saveLocal();
             
