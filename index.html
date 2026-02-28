@@ -304,8 +304,8 @@
         <div class="sb-title">MonoFlash</div>
         <div class="sb-sub">📦 Cards sync manual<br>📊 Progress stays local</div>
     </div>
-    <div style="padding:8px 12px;border-bottom:1px solid var(--border-b);text-align:center;">
-        <button class="sb-home-btn-subtle" onclick="switchToHome()">🏠 Home</button>
+    <div style="padding:0;border-bottom:1px solid var(--border-b);display:flex;justify-content:center;align-items:center;">
+        <button class="sb-home-btn-subtle" onclick="switchToHome()" style="width:100%;margin:8px 12px;">🏠 Home</button>
     </div>
     <div class="sb-content" id="subject-list"></div>
     <div class="add-btn" onclick="addNewSubject()">+ Add Subject</div>
@@ -775,12 +775,11 @@ function renderSidebar() {
         (function(subj){
             var item = document.createElement('div'); item.className = 'subject-item';
             var title = document.createElement('div'); title.className = 'subject-title';
+            title.onclick = function(e){ if(e.target.className.includes('del-icon')) return; toggleSubject(subj); };
             var ttxt = document.createElement('span'); ttxt.textContent = subj;
-            ttxt.onclick = function(){ toggleSubject(subj); };
             title.appendChild(ttxt);
             var actions = document.createElement('div'); actions.className = 'subject-actions';
             var chev = document.createElement('span'); chev.className = 'chevron'; chev.textContent = '▼';
-            chev.onclick = function(){ toggleSubject(subj); };
             actions.appendChild(chev);
             var del = document.createElement('span'); del.className = 'del-icon'; del.textContent = '×';
             del.onclick = function(e){ e.stopPropagation(); deleteSubject(subj); };
@@ -792,9 +791,9 @@ function renderSidebar() {
             for (var sub in cardContent[subj]) {
                 (function(sub){
                     var si = document.createElement('div'); si.className = 'sub-item';
+                    si.onclick = function(e){ if(e.target.className.includes('del-icon')) return; loadTopic(subj, sub); };
                     var stxt = document.createElement('span');
                     stxt.innerHTML = sub + ' <span class="card-count">' + cardContent[subj][sub].length + '</span>';
-                    stxt.onclick = function(){ loadTopic(subj, sub); };
                     si.appendChild(stxt);
                     var sdel = document.createElement('span'); sdel.className = 'del-icon'; sdel.textContent = '×';
                     sdel.onclick = function(e){ e.stopPropagation(); deleteSub(subj, sub); };
