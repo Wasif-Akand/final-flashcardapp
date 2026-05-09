@@ -1480,26 +1480,6 @@ function renderDbList() {
 
     var html = '';
     html += '<h3 class="db-sec-title">Import Data</h3>';
-    html += '<div style="background:var(--surface-el);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">';
-    html += '<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dimmer);margin-bottom:10px;">Format Options</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-    // Format 1
-    html += '<div style="border-left:2px solid var(--border-b);padding-left:10px;">';
-    html += '<div style="font-size:.72rem;font-weight:700;color:var(--dim);margin-bottom:3px;">Lesson blocks</div>';
-    html += '<code style="font-size:.72rem;color:#aaa;line-height:1.6;display:block;font-family:\'Courier New\',monospace;">##Lesson Name<br>Question -!- Answer</code>';
-    html += '</div>';
-    // Format 2
-    html += '<div style="border-left:2px solid var(--border-b);padding-left:10px;">';
-    html += '<div style="font-size:.72rem;font-weight:700;color:var(--dim);margin-bottom:3px;">JSON array</div>';
-    html += '<code style="font-size:.72rem;color:#aaa;line-height:1.6;display:block;font-family:\'Courier New\',monospace;">[{"name":"Lesson 1","cards":[{"q":"Q","a":"A"}]}]</code>';
-    html += '</div>';
-    // Format 3
-    html += '<div style="border-left:2px solid var(--border-b);padding-left:10px;">';
-    html += '<div style="font-size:.72rem;font-weight:700;color:var(--dim);margin-bottom:3px;">Plain pairs → adds to <em>'+escHtml(currentLesson||'selected lesson')+'</em></div>';
-    html += '<code style="font-size:.72rem;color:#aaa;display:block;font-family:\'Courier New\',monospace;">Question -!- Answer</code>';
-    html += '</div>';
-    html += '</div></div>';
-
     html += '<textarea id="json-input" placeholder="##Lesson 1&#10;What is gravity? -!- Force that attracts objects&#10;What is speed? -!- Distance over time&#10;&#10;##Lesson 2&#10;What is mass? -!- Amount of matter"></textarea>';
     html += '<input id="file-input" type="file" accept=".json" style="display:none" onchange="importJsonFile(event)">';
     html += '<div class="db-btn-group">';
@@ -1512,15 +1492,6 @@ function renderDbList() {
         var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
         html += '<div class="db-list-head"><h3>'+escHtml(currentLesson)+' Cards ('+cards.length+')</h3>';
         html += '<button class="btn" onclick="clearAllCards()" style="padding:8px 16px;font-size:.75rem;">Clear Lesson</button></div>';
-        // Inline quick add
-        html += '<div class="inline-add-card">';
-        html += '<div style="font-size:.7rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Quick Add Card</div>';
-        html += '<div class="inline-add-inputs">';
-        html += '<input class="inline-add-input" id="quick-q" placeholder="Question" onkeydown="if(event.key===\'Enter\'){document.getElementById(\'quick-a\').focus();}">';
-        html += '<input class="inline-add-input" id="quick-a" placeholder="Answer" onkeydown="if(event.key===\'Enter\')quickAddCard()">';
-        html += '</div>';
-        html += '<button class="btn btn-primary" onclick="quickAddCard()" style="width:100%;padding:10px;font-size:.8rem;">+ Add Card</button>';
-        html += '</div>';
         html += '<div id="db-list">';
         cards.forEach(function(c,i) {
             html += '<div class="db-item" id="db-item-'+i+'">';
