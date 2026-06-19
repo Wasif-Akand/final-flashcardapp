@@ -318,13 +318,25 @@
         .lc-buttons{display:flex;gap:10px;}
         .lc-buttons .onboarding-btn{flex:1;padding:11px 16px;font-size:.78rem;margin:0;}
 
-        /* MCQ TAG (badges) */
+        /* Type tags (badges) */
         .tag-mcq{display:inline-block;font-size:.55rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#000;background:linear-gradient(135deg,#fff 0%,#ccc 100%);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle;}
+        .tag-saq{display:inline-block;font-size:.55rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#000;background:linear-gradient(135deg,#f7dd8b 0%,#d6b75a 100%);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle;}
 
         /* MCQ STUDY MODE */
         .mcq-wrap{display:none;flex-direction:column;gap:14px;flex:1;min-height:0;padding:8px 0;overflow-y:auto;}
         #tab-flashcard.mcq-mode .card-container,#tab-flashcard.mcq-mode .controls,#tab-flashcard.mcq-mode .swipe-hint{display:none;}
         #tab-flashcard.mcq-mode .mcq-wrap{display:flex;}
+        /* SAQ LIST MODE */
+        .saq-wrap{display:none;flex-direction:column;gap:10px;flex:1;min-height:0;padding:8px 0;overflow-y:auto;}
+        #tab-flashcard.saq-mode .card-container,#tab-flashcard.saq-mode .mcq-wrap,#tab-flashcard.saq-mode .controls,#tab-flashcard.saq-mode .swipe-hint,#tab-flashcard.saq-mode .card-progress-info{display:none;}
+        #tab-flashcard.saq-mode .saq-wrap{display:flex;}
+        .saq-head{display:flex;flex-direction:column;gap:4px;padding:2px 2px 6px;}
+        .saq-title{font-size:1rem;font-weight:700;letter-spacing:.2px;color:#fff;}
+        .saq-subtitle{font-size:.72rem;color:var(--dimmer);line-height:1.4;}
+        .saq-list{display:flex;flex-direction:column;gap:10px;}
+        .saq-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1.5px solid var(--border-b);border-radius:14px;background:var(--surface-el);box-shadow:var(--sh-sm);}
+        .saq-index{flex-shrink:0;min-width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--border-b);font-size:.72rem;font-weight:800;color:var(--dim);}
+        .saq-question{font-size:.95rem;font-weight:600;line-height:1.45;color:#fff;}
         .mcq-card{position:relative;border:1.5px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:24px 20px;box-shadow:var(--sh-lg);min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;flex-shrink:0;}
         .mcq-question{font-size:clamp(1rem,3vw,1.2rem);font-weight:600;line-height:1.5;}
         .mcq-bookmark-icon{position:absolute;top:12px;right:12px;font-size:1.4rem;cursor:pointer;z-index:10;user-select:none;transition:all .25s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
@@ -346,6 +358,8 @@
         .mcq-db-options{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
         .db-mcq-opt{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.03);color:var(--dim);}
         .db-mcq-opt.correct{border-color:rgba(46,204,113,.4);background:rgba(46,204,113,.08);color:#2ecc71;font-weight:700;}
+        .db-saq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;}
+        .db-saq-mark{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.03);color:var(--dim);flex-shrink:0;}
         .home-content{display:flex;flex-direction:column;gap:14px;padding:4px 0 12px;}
         .home-btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;}
         .home-btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
@@ -643,6 +657,7 @@
             <div class="lc-toggle" id="lc-type-toggle">
                 <button type="button" class="lc-toggle-opt active" data-type="flashcard" onclick="setLessonCreateType('flashcard')">🃏 Flashcards</button>
                 <button type="button" class="lc-toggle-opt" data-type="mcq" onclick="setLessonCreateType('mcq')">☑️ MCQ</button>
+                <button type="button" class="lc-toggle-opt" data-type="saq" onclick="setLessonCreateType('saq')">✍️ SAQ</button>
             </div>
         </div>
         <div class="lc-hint" id="lc-type-hint">Cards behave as usual — add Q/A pairs from the Data tab after creating.</div>
@@ -777,10 +792,10 @@
                     <div class="home-sec-title"><span>Getting Started</span></div>
                     <div class="home-item"><span class="home-item-bullet">1.</span><span>Create a <strong>Subject</strong> → add a <strong>Topic</strong> inside it</span></div>
                     <div class="home-item"><span class="home-item-bullet">2.</span><span>Select the topic from the sidebar — you'll see the <strong>Lessons screen</strong></span></div>
-                    <div class="home-item"><span class="home-item-bullet">3.</span><span>+ New Lesson → pick <strong>Flashcards</strong> or <strong>MCQ</strong>, then add cards from the Data tab</span></div>
-                    <div class="home-item"><span class="home-item-bullet">4.</span><span>Click a lesson to start reviewing — MCQ lessons are tap-to-answer, auto-graded by SRS</span></div>
+                    <div class="home-item"><span class="home-item-bullet">3.</span><span>+ New Lesson → pick <strong>Flashcards</strong>, <strong>MCQ</strong>, or <strong>SAQ</strong>, then add cards from the Data tab</span></div>
+                    <div class="home-item"><span class="home-item-bullet">4.</span><span>Click a lesson to start reviewing — MCQ lessons are tap-to-answer, SAQs show the answer and mark, all tracked by SRS</span></div>
                     <div class="home-item"><span class="home-item-bullet">5.</span><span>Use the ← Back button to return to lesson list anytime</span></div>
-                    <div class="home-tip" style="margin-top:8px;"><strong>Import format:</strong> Flashcards → Question -!- Answer &nbsp;·&nbsp; MCQ → Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</div>
+                    <div class="home-tip" style="margin-top:8px;"><strong>Import format:</strong> Flashcards → Question -!- Answer &nbsp;·&nbsp; MCQ → Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer &nbsp;·&nbsp; SAQ → Question -!- Mark</div>
                 </div>
 
                 <section class="home-section">
@@ -845,6 +860,9 @@
                 </div>
                 <div class="mcq-options" id="mcq-options-wrap"></div>
                 <div class="mcq-hint">Tap an option &nbsp;·&nbsp; 1-4 to answer &nbsp;·&nbsp; B bookmark &nbsp;·&nbsp; / back</div>
+            </div>
+            <div class="saq-wrap" id="saq-wrap">
+                <div class="saq-list" id="saq-list"></div>
             </div>
             <div class="controls">
                 <button class="btn" onclick="nextCard(false)">Missed</button>
@@ -1072,6 +1090,16 @@ function setLessonType(subj, topic, lesson, type) {
     if (!t) return;
     if (!t.lessonTypes) t.lessonTypes = {};
     t.lessonTypes[lesson] = type;
+}
+function lessonTypeBadgeHtml(type) {
+    if (type === 'mcq') return '<span class="tag-mcq">MCQ</span>';
+    if (type === 'saq') return '<span class="tag-saq">SAQ</span>';
+    return '';
+}
+function lessonTypeGlyph(type) {
+    if (type === 'mcq') return '☑️';
+    if (type === 'saq') return '✍️';
+    return '🃏';
 }
 function totalCardsInTopic(subj, topic) {
     var lessons = getLessons(subj, topic);
@@ -1414,11 +1442,11 @@ function buildLessonCardHtml(ln) {
     h += '<div class="lesson-card" onclick="loadLesson(\''+escAttr(ln)+'\')">';
     h += '<div class="lesson-card-inner">';
     h += '<div class="lesson-card-top">';
-    h += '<div class="lesson-card-name">'+escHtml(ln)+(lType==='mcq'?'<span class="tag-mcq">MCQ</span>':'')+'</div>';
+    h += '<div class="lesson-card-name">'+escHtml(ln)+lessonTypeBadgeHtml(lType)+'</div>';
     h += '<span class="lesson-card-del" onclick="event.stopPropagation();deleteLesson(\''+escAttr(ln)+'\')" title="Delete lesson">×</span>';
     h += '</div>';
     h += '<div class="lesson-card-meta">';
-    h += '<div class="lesson-meta-item">'+(lType==='mcq'?'☑️':'🃏')+' <span>'+cards.length+' cards</span></div>';
+    h += '<div class="lesson-meta-item">'+lessonTypeGlyph(lType)+' <span>'+cards.length+' cards</span></div>';
     h += '<div class="lesson-meta-item">🔔 <span>'+dueCount+' due</span></div>';
     h += '<div class="lesson-meta-item">⭐ <span>'+masteredCount+' mastered</span></div>';
     h += '<div class="lesson-meta-item">🕐 <span>'+lastStr+'</span></div>';
@@ -1514,6 +1542,8 @@ function updateLessonCreateToggleUI() {
     if (!hint) return;
     if (lessonCreateType === 'mcq') {
         hint.innerHTML = 'MCQ lesson. After creating, add questions from the <strong style="color:var(--dim);">Data tab</strong> using:<br><code>Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</code><br>The correct answer must match one option\u2019s text exactly. Studied with tap-to-answer, auto-graded by SRS.';
+    } else if (lessonCreateType === 'saq') {
+        hint.innerHTML = 'SAQ lesson. After creating, add questions from the <strong style="color:var(--dim);">Data tab</strong> using:<br><code>Question -!- Mark</code><br>The mark is saved with the card and shown in the database tab.';
     } else {
         hint.textContent = 'Cards behave as usual — add Q/A pairs from the Data tab after creating, using Question -!- Answer.';
     }
@@ -1588,7 +1618,7 @@ function buildShuffledCards() {
     if (!currentSubject||!currentTopic||!currentLesson) { shuffledCards=[]; return; }
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var srs = getLessonSRS(currentSubject, currentTopic, currentLesson);
-    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[i]||createSRS(),_index:i}; });
+    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,mark:c.mark,srs:srs[i]||createSRS(),_index:i}; });
     dueCards = w.filter(function(c){ return isDue(c.srs); });
     shuffledCards = shuffle(dueCards.length ? dueCards : w);
 }
@@ -1643,7 +1673,7 @@ function renderCard() {
     void card.offsetHeight;
 
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) {
-        if (tabEl) tabEl.classList.remove('mcq-mode');
+        if (tabEl) { tabEl.classList.remove('mcq-mode'); tabEl.classList.remove('saq-mode'); }
         front.textContent = currentLesson ? 'Session complete! Tap Study Again.' : 'Select a topic to begin';
         back.textContent  = currentLesson ? '' : 'Browse your subjects';
         if (timerWrap) timerWrap.classList.remove('visible');
@@ -1655,10 +1685,16 @@ function renderCard() {
 
     var cur = shuffledCards[cardIndex];
     var isMCQ = cur.type === 'mcq';
-    if (tabEl) tabEl.classList.toggle('mcq-mode', isMCQ);
+    var isSAQ = cur.type === 'saq';
+    if (tabEl) {
+        tabEl.classList.toggle('mcq-mode', isMCQ);
+        tabEl.classList.toggle('saq-mode', isSAQ);
+    }
 
     if (isMCQ) {
         renderMCQOptions(cur);
+    } else if (isSAQ) {
+        renderSAQList();
     } else {
         front.textContent = cur.q;
         back.textContent  = cur.a;
@@ -1700,6 +1736,22 @@ function renderMCQOptions(c) {
         optsWrap.appendChild(b);
     });
 }
+
+function renderSAQList() {
+    var listWrap = document.getElementById('saq-list');
+    if (!listWrap) return;
+    var cards = currentLesson ? getLessonCards(currentSubject, currentTopic, currentLesson) : [];
+    var html = '<div class="saq-head"><div class="saq-title">Answer the following questions</div><div class="saq-subtitle">Read each question in order. The mark is shown on the right for quick review.</div></div>';
+    var saqCards = cards.filter(function(c){ return c.type === 'saq'; });
+    if (!saqCards.length) {
+        listWrap.innerHTML = html + '<div style="color:var(--dimmer);text-align:center;padding:18px 12px;">No SAQ questions yet.</div>';
+        return;
+    }
+    saqCards.forEach(function(c, idx){
+        html += '<div class="saq-item"><span class="saq-index">'+(idx+1)+'</span><div class="saq-question" style="flex:1;">'+escHtml(c.q)+'</div><span class="db-saq-mark">'+escHtml(c.mark || '1')+'</span></div>';
+    });
+    listWrap.innerHTML = html;
+}
 function selectMCQOption(opt, btnEl) {
     if (mcqLocked) return;
     mcqLocked = true;
@@ -1720,7 +1772,7 @@ function selectMCQOption(opt, btnEl) {
 
 function flipCard() {
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) return;
-    if (shuffledCards[cardIndex].type === 'mcq') return;
+    if (shuffledCards[cardIndex].type === 'mcq' || shuffledCards[cardIndex].type === 'saq') return;
     document.getElementById('active-card').classList.toggle('flipped');
 }
 function previousCard() {
@@ -1732,6 +1784,7 @@ function previousCard() {
 }
 function nextCard(quality) {
     if (!currentLesson||!shuffledCards.length||cardIndex>=shuffledCards.length) return;
+    if (getLessonType(currentSubject, currentTopic, currentLesson) === 'saq') return;
     stopTimer(); // stop current card timer
     var cur = shuffledCards[cardIndex];
     if (quality!=='pass') {
@@ -1909,6 +1962,7 @@ function renderContSel() {
     var info = document.getElementById('cont-info');
     var headerLabel = document.getElementById('cont-header-label');
     if (!currentLesson) { wrap.style.display='none'; return; }
+    if (getLessonType(currentSubject, currentTopic, currentLesson) === 'saq') { wrap.style.display='none'; return; }
     var all = getLessonCards(currentSubject, currentTopic, currentLesson);
     var num = Math.ceil(all.length/CARDS_PER_CONTAINER);
     if (all.length<=CARDS_PER_CONTAINER&&missedCardsThisSession.size===0&&getBookmarkCount()===0){ wrap.style.display='none'; return; }
@@ -1938,12 +1992,12 @@ function selectContainer(id) {
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var srs   = getLessonSRS(currentSubject, currentTopic, currentLesson);
     if (id==='all') {
-        var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[i]||createSRS(),_index:i}; });
+        var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,mark:c.mark,srs:srs[i]||createSRS(),_index:i}; });
         var due = w.filter(function(c){ return isDue(c.srs); });
         shuffledCards = shuffle(due.length?due:w);
     } else {
         var s0=id*CARDS_PER_CONTAINER, e0=Math.min(s0+CARDS_PER_CONTAINER,cards.length);
-        var w2=cards.slice(s0,e0).map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[s0+i]||createSRS(),_index:s0+i}; });
+        var w2=cards.slice(s0,e0).map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,mark:c.mark,srs:srs[s0+i]||createSRS(),_index:s0+i}; });
         var due2=w2.filter(function(c){ return isDue(c.srs); });
         shuffledCards=shuffle(due2.length?due2:w2);
     }
@@ -1955,7 +2009,7 @@ function toggleReviewMissed() {
     if (reviewMissedMode) {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
-        shuffledCards=shuffle(Array.from(missedCardsThisSession).map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
+        shuffledCards=shuffle(Array.from(missedCardsThisSession).map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,mark:cards[i].mark,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
     } else { selectContainer(currentContainer); }
     renderCard(); renderContSel();
 }
@@ -1966,7 +2020,7 @@ function toggleReviewBookmarks() {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
         var bmIdxs=getLessonBookmarks(currentSubject,currentTopic,currentLesson);
-        shuffledCards=shuffle(bmIdxs.map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
+        shuffledCards=shuffle(bmIdxs.map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,mark:cards[i].mark,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
     } else { selectContainer(currentContainer); }
     renderCard(); renderContSel();
 }
@@ -1997,6 +2051,8 @@ function dbCardContentHtml(c) {
             html += '<span class="db-mcq-opt'+(isCorrect?' correct':'')+'">'+(isCorrect?'✓ ':'')+escHtml(opt)+'</span>';
         });
         html += '</div>';
+    } else if (c.type === 'saq') {
+        html = '<div class="db-item-content db-saq-row"><div class="db-key">'+escHtml(c.q)+'</div><span class="db-saq-mark">'+escHtml(c.mark || '1')+'</span></div>';
     } else {
         html += '<div class="db-val">'+escHtml(c.a)+'</div>';
     }
@@ -2022,9 +2078,11 @@ function renderDbList() {
     html += '<h3 class="db-sec-title">Import Data</h3>';
     var placeholder = curType === 'mcq'
         ? "##"+currentLesson+"\nWhat is the capital of France? -!- London -!- Paris -!- Berlin -!- Madrid -!- Paris\nWhich planet is closest to the Sun? -!- Venus -!- Earth -!- Mercury -!- Mars -!- Mercury"
+        : curType === 'saq'
+        ? "##"+currentLesson+"\nWhat is gravity? -!- 2\nWhat is mass? -!- 1"
         : "##Lesson 1\nWhat is gravity? -!- Force that attracts objects\nWhat is speed? -!- Distance over time\n\n##Lesson 2\nWhat is mass? -!- Amount of matter";
     html += '<textarea id="json-input" placeholder="'+escAttr(placeholder)+'"></textarea>';
-    html += '<div class="db-sub">Flashcards: <strong style="color:var(--dim);">Question -!- Answer</strong> &nbsp;·&nbsp; MCQ: <strong style="color:var(--dim);">Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</strong> (must match one option exactly, auto-detected by 5 separators)</div>';
+    html += '<div class="db-sub">Flashcards: <strong style="color:var(--dim);">Question -!- Answer</strong> &nbsp;·&nbsp; MCQ: <strong style="color:var(--dim);">Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</strong> &nbsp;·&nbsp; SAQ: <strong style="color:var(--dim);">Question -!- Mark</strong></div>';
     html += '<input id="file-input" type="file" accept=".json" style="display:none" onchange="importJsonFile(event)">';
     html += '<div class="db-btn-group">';
     html += '<button class="btn btn-primary" onclick="importData()">Import</button>';
@@ -2034,7 +2092,7 @@ function renderDbList() {
     // Per-lesson cards
     if (currentLesson) {
         var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
-        html += '<div class="db-list-head"><h3>'+escHtml(currentLesson)+(curType==='mcq'?'<span class="tag-mcq">MCQ</span>':'')+' Cards ('+cards.length+')</h3>';
+        html += '<div class="db-list-head"><h3>'+escHtml(currentLesson)+lessonTypeBadgeHtml(curType)+' Cards ('+cards.length+')</h3>';
         html += '<button class="btn" onclick="clearAllCards()" style="padding:8px 16px;font-size:.75rem;">Clear Lesson</button></div>';
         html += '<div id="db-list">';
         cards.forEach(function(c,i) {
@@ -2053,7 +2111,7 @@ function renderDbList() {
             var cards = lessons[ln];
             var lt = getLessonType(currentSubject, currentTopic, ln);
             html += '<div style="margin-bottom:24px;">';
-            html += '<div class="db-lesson-badge">'+escHtml(ln)+' · '+cards.length+' cards'+(lt==='mcq'?' · MCQ':'')+'</div>';
+            html += '<div class="db-lesson-badge">'+escHtml(ln)+' · '+cards.length+' cards'+lessonTypeBadgeHtml(lt)+'</div>';
             if (cards.length === 0) {
                 html += '<div style="color:var(--dimmer);font-size:.85rem;padding:8px 0;">No cards yet</div>';
             }
@@ -2083,7 +2141,8 @@ function renderDbList() {
 function parseBlockFormat(text) {
     // ##Lesson Name\nQ -!- A\nQ -!- A\n\n##Lesson 2\n...
     // MCQ line (auto-detected, exactly 6 segments): Q -!- Opt1 -!- Opt2 -!- Opt3 -!- Opt4 -!- CorrectAnswer
-    var result = {}; // lessonName -> [{q,a} or {q,a,type:'mcq',options,correct}]
+    // SAQ line (exactly 2 segments): Q -!- Mark
+    var result = {}; // lessonName -> [{q,a} or {q,a,type:'mcq',options,correct} or {q,mark,type:'saq'}]
     var currentLessonName = null;
     var lines = text.split('\n');
     lines.forEach(function(line) {
@@ -2103,6 +2162,14 @@ function parseBlockFormat(text) {
             var correct = rawParts[5].trim();
             if (mq && correct && opts.every(function(o){ return o; })) {
                 result[target].push({ q:mq, a:correct, type:'mcq', options:opts, correct:correct });
+                return;
+            }
+        }
+        if (rawParts.length === 2) {
+            var sq = rawParts[0].trim();
+            var mark = rawParts[1].trim();
+            if (sq && mark) {
+                result[target].push({ q:sq, type:'saq', mark:mark });
                 return;
             }
         }
@@ -2127,7 +2194,7 @@ function importData() {
         try {
             var parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed[0] && parsed[0].name && parsed[0].cards) {
-                // [{name, cards:[{q,a}], type?:'mcq'|'flashcard'}]
+                // [{name, cards:[{q,a}], type?:'mcq'|'saq'|'flashcard'}]
                 lessonMap = {};
                 parsed.forEach(function(l){ lessonMap[l.name] = l.cards||[]; if (l.type) lessonTypeMap[l.name]=l.type; });
             } else if (Array.isArray(parsed) && parsed[0] && parsed[0].q) {
@@ -2167,6 +2234,8 @@ function importData() {
         if (lessonTypeMap[ln]) setLessonType(currentSubject, currentTopic, ln, lessonTypeMap[ln]);
         else if (lessonMap[ln].some(function(c){ return c.type==='mcq'; }) && getLessonType(currentSubject,currentTopic,ln)==='flashcard' && existing.every(function(c){ return c.type==='mcq'; })) {
             setLessonType(currentSubject, currentTopic, ln, 'mcq');
+        } else if (lessonMap[ln].some(function(c){ return c.type==='saq'; }) && getLessonType(currentSubject,currentTopic,ln)==='flashcard' && existing.every(function(c){ return c.type==='saq'; })) {
+            setLessonType(currentSubject, currentTopic, ln, 'saq');
         }
     }
 
@@ -2198,12 +2267,19 @@ function quickAddCard() {
     var q=(document.getElementById('quick-q')||{}).value||'';
     var a=(document.getElementById('quick-a')||{}).value||'';
     q=q.trim(); a=a.trim();
-    if (!q||!a){ alert('Both question and answer are required.'); return; }
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     if (cards.some(function(c){ return c.q.trim().toLowerCase()===q.toLowerCase(); })){
         alert('A card with this question already exists.'); return;
     }
-    cards.push({q:q,a:a});
+    if (getLessonType(currentSubject, currentTopic, currentLesson) === 'saq') {
+        if (!q){ alert('Question is required.'); return; }
+        var mark = prompt('Mark for this SAQ card:', '1');
+        if (mark === null) return;
+        cards.push({q:q,mark:String(mark).trim() || '1',type:'saq'});
+    } else {
+        if (!q||!a){ alert('Both question and answer are required.'); return; }
+        cards.push({q:q,a:a});
+    }
     ensureSRS(); saveData(); renderSidebar(); updateHomeStats();
     buildShuffledCards();
     renderDbList();
@@ -2217,13 +2293,29 @@ function editCard(idx) {
     if (card.type === 'mcq') { alert('MCQ cards can\'t be edited inline yet — delete and re-import the line instead.'); return; }
     var newQ = prompt('Edit Question:', card.q);
     if (newQ===null) return;
-    var newA = prompt('Edit Answer:', card.a);
-    if (newA===null) return;
-    newQ=newQ.trim(); newA=newA.trim();
-    if (!newQ||!newA){ alert('Cannot be empty.'); return; }
-    cards[idx]={q:newQ,a:newA};
+    newQ=newQ.trim();
+    if (!newQ){ alert('Cannot be empty.'); return; }
+    if (card.type === 'saq') {
+        var newMark = prompt('Edit Mark:', card.mark || '1');
+        if (newMark===null) return;
+        cards[idx]={q:newQ,mark:String(newMark).trim() || '1',type:'saq'};
+    } else {
+        var newA = prompt('Edit Answer:', card.a);
+        if (newA===null) return;
+        newA=newA.trim();
+        if (!newA){ alert('Cannot be empty.'); return; }
+        cards[idx]={q:newQ,a:newA};
+    }
     saveData();
-    if (shuffledCards[cardIndex]&&shuffledCards[cardIndex]._index===idx){ shuffledCards[cardIndex].q=newQ; shuffledCards[cardIndex].a=newA; renderCard(); }
+    if (shuffledCards[cardIndex]&&shuffledCards[cardIndex]._index===idx){
+        shuffledCards[cardIndex].q=newQ;
+        if (card.type === 'saq') {
+            shuffledCards[cardIndex].mark = cards[idx].mark;
+        } else {
+            shuffledCards[cardIndex].a=newA;
+        }
+        renderCard();
+    }
     renderDbList();
 }
 function deleteCard(idx) {
@@ -2692,7 +2784,7 @@ function renderPlanRow(r, num, isQueued) {
     var html = '<div class="plan-row" onclick="goToLessonFromHome(\'' + escAttr(r.subj) + '\',\'' + escAttr(r.topic) + '\',\'' + escAttr(r.lesson) + '\')">';
     html += '<span class="plan-row-num">' + num + '</span>';
     html += '<div class="plan-row-main">';
-    html += '<div class="plan-row-name">' + escHtml(r.subj) + ' &nbsp;\u203a&nbsp; ' + escHtml(r.lesson) + (r.lessonType==='mcq'?'<span class="tag-mcq">MCQ</span>':'') + '</div>';
+    html += '<div class="plan-row-name">' + escHtml(r.subj) + ' &nbsp;\u203a&nbsp; ' + escHtml(r.lesson) + lessonTypeBadgeHtml(r.lessonType) + '</div>';
     html += '<div class="plan-row-path">' + escHtml(r.topic) + '</div>';
     html += '<div class="plan-row-action">' + escHtml(r.action) + '</div>';
     html += '</div><div class="plan-row-right">';
@@ -3170,6 +3262,7 @@ document.addEventListener('keydown', function(e) {
         else if (e.code === 'Escape') { e.preventDefault(); goBackToLessons(); }
         return;
     }
+    if (curCard && curCard.type === 'saq') return;
 
     if (e.code === 'Space' || e.code === 'Enter')  { e.preventDefault(); flipCard(); }
     else if (e.code === 'KeyW' || e.code === 'ArrowUp')       { e.preventDefault(); flipCard(); }       // W or ↑ = flip
