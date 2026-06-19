@@ -128,6 +128,9 @@
         #content-area::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:3px;}
         .tab-view{display:none;height:100%;animation:fadeIn .4s cubic-bezier(.4,0,.2,1);flex-direction:column;}
         .tab-view.active{display:flex;}
+        .lessons-footer{display:none;padding:14px 20px 16px;border-top:1px solid var(--border-b);background:linear-gradient(180deg,rgba(12,12,12,.72),rgba(12,12,12,.94));box-shadow:0 -10px 28px rgba(0,0,0,.35);backdrop-filter:blur(14px);position:relative;z-index:8;}
+        .lessons-footer.show{display:block;}
+        .lessons-footer .lessons-add-section{margin-top:0;border-top:none;padding-top:0;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
         /* ── LESSON SELECTION ─────────────────────────────────── */
@@ -135,46 +138,46 @@
         .lessons-header{margin-bottom:20px;}
         .lessons-title{font-size:1.4rem;font-weight:800;letter-spacing:1px;margin-bottom:4px;}
         .lessons-subtitle{font-size:.8rem;color:var(--dim);}
-        .lesson-card{border:1px solid var(--border-b);border-radius:12px;background:var(--surface-el);margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden;position:relative;}
-        .lesson-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#fff,#555);transform:scaleY(0);transform-origin:top;transition:transform var(--tn);}
-        .lesson-card:hover{border-color:#555;box-shadow:0 6px 24px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.05);transform:translateY(-2px);}
-        .lesson-card:hover::before{transform:scaleY(1);}
+        .lesson-card{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025));margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden;position:relative;box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.22);backdrop-filter:blur(8px);}
+        .lesson-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#fff,#9a9a9a);transform:scaleY(0);transform-origin:top;transition:transform var(--tn),opacity var(--tn);opacity:0;}
+        .lesson-card:hover{border-color:rgba(255,255,255,.18);box-shadow:0 10px 28px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);transform:translateY(-2px);}
+        .lesson-card:hover::before{transform:scaleY(1);opacity:1;}
         .lesson-card:active{transform:translateY(0) scale(.98);}
-        .lesson-card-inner{padding:16px 16px 14px;}
+        .lesson-card-inner{padding:15px 16px 14px;}
         .lesson-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;}
-        .lesson-card-name{font-weight:700;font-size:1rem;letter-spacing:.3px;line-height:1.3;}
-        .lesson-card-del{color:var(--dimmer);cursor:pointer;font-size:1.1rem;padding:4px;transition:color .2s,transform .2s;flex-shrink:0;}
+        .lesson-card-name{font-weight:800;font-size:1rem;letter-spacing:.25px;line-height:1.3;}
+        .lesson-card-del{color:var(--dimmer);cursor:pointer;font-size:1.1rem;padding:4px;transition:color .2s,transform .2s;flex-shrink:0;opacity:.8;}
         .lesson-card-del:hover{color:var(--err);transform:scale(1.2) rotate(90deg);}
-        .lesson-card-meta{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;}
-        .lesson-meta-item{font-size:.75rem;color:var(--dimmer);display:flex;align-items:center;gap:4px;}
+        .lesson-card-meta{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;}
+        .lesson-meta-item{font-size:.73rem;color:var(--dimmer);display:flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid rgba(255,255,255,.06);border-radius:999px;background:rgba(255,255,255,.03);}
         .lesson-meta-item span{color:var(--dim);}
-        .lesson-progress-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
-        .lesson-progress-bar{height:100%;background:linear-gradient(90deg,#fff,#aaa);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(255,255,255,.3);}
-        .lesson-progress-pct{font-size:.65rem;color:var(--dimmer);text-align:right;margin-top:4px;}
-        .lessons-add-section{margin-top:20px;border-top:1px solid var(--border-b);padding-top:20px;}
-        .lessons-add-title{font-size:.85rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;color:var(--dim);}
+        .lesson-progress-wrap{height:5px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;}
+        .lesson-progress-bar{height:100%;background:linear-gradient(90deg,#fff,#b9b9b9);border-radius:999px;transition:width .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(255,255,255,.25);}
+        .lesson-progress-pct{font-size:.65rem;color:var(--dimmer);text-align:right;margin-top:5px;letter-spacing:.2px;}
+        .lessons-add-section{margin-top:22px;border-top:1px solid var(--border-b);padding-top:20px;}
+        .lessons-add-title{font-size:.82rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;color:var(--dim);}
         .lessons-empty{text-align:center;padding:40px 20px;color:var(--dimmer);}
         .lessons-empty-icon{font-size:2.5rem;margin-bottom:12px;}
         .lessons-empty-text{font-size:.9rem;line-height:1.5;}
-        .lessons-add-row{display:flex;gap:8px;}
+        .lessons-add-row{display:flex;gap:8px;align-items:stretch;}
         .divider-add-btn{flex:0 0 52px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:var(--dim);cursor:pointer;font-size:.95rem;font-weight:800;letter-spacing:.5px;transition:all .2s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-sm);font-family:'Courier New',monospace;}
         .divider-add-btn:hover{background:var(--surface-el);border-color:var(--accent);color:var(--text);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);}
         .divider-add-btn:active{transform:translateY(0) scale(.95);transition:all .1s;}
 
         /* LESSON DIVIDERS (collapsible groups) */
-        .lesson-divider{margin:22px 0 14px;}
+        .lesson-divider{margin:22px 0 14px;padding:12px 12px 12px 14px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.02));box-shadow:0 8px 22px rgba(0,0,0,.18);}
         .lesson-divider:first-child{margin-top:2px;}
-        .lesson-divider-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:2px 0;}
+        .lesson-divider-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:2px 0 4px;}
         .lesson-divider-chevron{flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:#fff;line-height:1;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .2s;}
         .lesson-divider-header:hover .lesson-divider-chevron{opacity:.7;}
         .lesson-divider.collapsed .lesson-divider-chevron{transform:rotate(-90deg);}
         .lesson-divider-name{font-weight:700;font-size:1rem;letter-spacing:.3px;color:#fff;white-space:nowrap;flex-shrink:0;}
-        .lesson-divider-line{flex:1;height:2px;background:rgba(255,255,255,.22);min-width:16px;border-radius:1px;}
+        .lesson-divider-line{flex:1;height:2px;background:rgba(255,255,255,.18);min-width:16px;border-radius:1px;}
         .lesson-divider-del{font-size:1.4rem;color:#fff;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1;transition:color .2s,transform .2s,opacity .2s;}
         .lesson-divider-del:hover{color:var(--err);opacity:1;transform:scale(1.2) rotate(90deg);}
         .lesson-divider-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s cubic-bezier(.4,0,.2,1);}
         .lesson-divider.collapsed .lesson-divider-body{grid-template-rows:0fr;}
-        .lesson-divider-body-inner{min-height:0;overflow:hidden;padding-top:14px;}
+        .lesson-divider-body-inner{min-height:0;overflow:hidden;padding-top:12px;}
         .lesson-divider-empty{font-size:.72rem;color:var(--dimmer);text-align:center;padding:14px 8px;border:1px dashed var(--border);border-radius:8px;margin-bottom:10px;}
         .lesson-divider-add{width:100%;padding:8px 0;background:transparent;border:none;color:var(--dimmer);cursor:pointer;font-size:.68rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;text-align:left;transition:color var(--tf);}
         .lesson-divider-add:hover{color:var(--text);}
@@ -327,16 +330,16 @@
         #tab-flashcard.mcq-mode .card-container,#tab-flashcard.mcq-mode .controls,#tab-flashcard.mcq-mode .swipe-hint{display:none;}
         #tab-flashcard.mcq-mode .mcq-wrap{display:flex;}
         /* SAQ LIST MODE */
-        .saq-wrap{display:none;flex-direction:column;gap:10px;flex:1;min-height:0;padding:8px 0;overflow-y:auto;}
+        .saq-wrap{display:none;flex-direction:column;gap:12px;flex:1;min-height:0;padding:8px 0;overflow-y:auto;}
         #tab-flashcard.saq-mode .card-container,#tab-flashcard.saq-mode .mcq-wrap,#tab-flashcard.saq-mode .controls,#tab-flashcard.saq-mode .swipe-hint,#tab-flashcard.saq-mode .card-progress-info{display:none;}
         #tab-flashcard.saq-mode .saq-wrap{display:flex;}
-        .saq-head{display:flex;flex-direction:column;gap:4px;padding:2px 2px 6px;}
-        .saq-title{font-size:1rem;font-weight:700;letter-spacing:.2px;color:#fff;}
-        .saq-subtitle{font-size:.72rem;color:var(--dimmer);line-height:1.4;}
+        .saq-head{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));box-shadow:0 8px 22px rgba(0,0,0,.18);}
+        .saq-title{font-size:1rem;font-weight:800;letter-spacing:.2px;color:#fff;}
+        .saq-subtitle{font-size:.72rem;color:var(--dimmer);line-height:1.45;max-width:56ch;}
         .saq-list{display:flex;flex-direction:column;gap:10px;}
-        .saq-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1.5px solid var(--border-b);border-radius:14px;background:var(--surface-el);box-shadow:var(--sh-sm);}
+        .saq-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border:1.5px solid var(--border-b);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025));box-shadow:var(--sh-sm);}
         .saq-index{flex-shrink:0;min-width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--border-b);font-size:.72rem;font-weight:800;color:var(--dim);}
-        .saq-question{font-size:.95rem;font-weight:600;line-height:1.45;color:#fff;}
+        .saq-question{font-size:.96rem;font-weight:600;line-height:1.5;color:#fff;}
         .mcq-card{position:relative;border:1.5px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:24px 20px;box-shadow:var(--sh-lg);min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;flex-shrink:0;}
         .mcq-question{font-size:clamp(1rem,3vw,1.2rem);font-weight:600;line-height:1.5;}
         .mcq-bookmark-icon{position:absolute;top:12px;right:12px;font-size:1.4rem;cursor:pointer;z-index:10;user-select:none;transition:all .25s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
@@ -359,7 +362,7 @@
         .db-mcq-opt{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.03);color:var(--dim);}
         .db-mcq-opt.correct{border-color:rgba(46,204,113,.4);background:rgba(46,204,113,.08);color:#2ecc71;font-weight:700;}
         .db-saq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;}
-        .db-saq-mark{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.03);color:var(--dim);flex-shrink:0;}
+        .db-saq-mark{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.04);color:var(--dim);flex-shrink:0;min-width:36px;text-align:center;}
         .home-content{display:flex;flex-direction:column;gap:14px;padding:4px 0 12px;}
         .home-btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;}
         .home-btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
@@ -792,7 +795,7 @@
                     <div class="home-sec-title"><span>Getting Started</span></div>
                     <div class="home-item"><span class="home-item-bullet">1.</span><span>Create a <strong>Subject</strong> → add a <strong>Topic</strong> inside it</span></div>
                     <div class="home-item"><span class="home-item-bullet">2.</span><span>Select the topic from the sidebar — you'll see the <strong>Lessons screen</strong></span></div>
-                    <div class="home-item"><span class="home-item-bullet">3.</span><span>+ New Lesson → pick <strong>Flashcards</strong>, <strong>MCQ</strong>, or <strong>SAQ</strong>, then add cards from the Data tab</span></div>
+                    <div class="home-item"><span class="home-item-bullet">3.</span><span>+ New Top-Level Lesson → pick <strong>Flashcards</strong>, <strong>MCQ</strong>, or <strong>SAQ</strong>, then add cards from the Data tab</span></div>
                     <div class="home-item"><span class="home-item-bullet">4.</span><span>Click a lesson to start reviewing — MCQ lessons are tap-to-answer, SAQs show the answer and mark, all tracked by SRS</span></div>
                     <div class="home-item"><span class="home-item-bullet">5.</span><span>Use the ← Back button to return to lesson list anytime</span></div>
                     <div class="home-tip" style="margin-top:8px;"><strong>Import format:</strong> Flashcards → Question -!- Answer &nbsp;·&nbsp; MCQ → Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer &nbsp;·&nbsp; SAQ → Question -!- Mark</div>
@@ -886,6 +889,7 @@
         </div>
 
     </section>
+    <div id="lessons-footer" class="lessons-footer"></div>
     <nav id="main-nav">
         <div class="nav-item active" onclick="switchTab('flashcard',this)">Cards</div>
         <div class="nav-item" onclick="switchTab('performance',this)">Stats</div>
@@ -1412,17 +1416,20 @@ function renderLessonsScreen() {
         });
     }
 
-    // Add lesson section
-    html += '<div class="lessons-add-section">';
-    html += '<div class="lessons-add-row">';
-    html += '<button class="btn btn-primary" onclick="openLessonCreateModal()" style="flex:1;padding:13px 20px;font-size:.85rem;">+ New Lesson</button>';
-    html += '<button class="divider-add-btn" onclick="addDividerPrompt()" title="Add a divider to group lessons">&lt;&gt;</button>';
-    html += '</div>';
-    html += '<div style="font-size:.75rem;color:var(--dimmer);margin-top:10px;">Cards are added afterwards from the <strong style="color:var(--dim);">Data tab</strong> via text or JSON · use <strong style="color:var(--dim);">&lt;&gt;</strong> to group lessons under a divider</div>';
-    html += '</div>';
-
     html += '</div></div>';
     container.innerHTML = html;
+
+    var footer = document.getElementById('lessons-footer');
+    if (footer) {
+        footer.classList.add('show');
+        footer.innerHTML = '<div class="lessons-add-section">'
+            + '<div class="lessons-add-row">'
+            + '<button class="btn btn-primary" onclick="openLessonCreateModal()" style="flex:1;padding:13px 20px;font-size:.85rem;">+ New Top-Level Lesson</button>'
+            + '<button class="divider-add-btn" onclick="addDividerPrompt()" title="Add a divider to group lessons">&lt; &gt;</button>'
+            + '</div>'
+            + '<div style="font-size:.75rem;color:var(--dimmer);margin-top:10px;line-height:1.45;">Use <strong style="color:var(--dim);">+ New Top-Level Lesson</strong> for a lesson at the topic level. Use <strong style="color:var(--dim);">&lt; &gt;</strong> to place a lesson inside a group. Cards are added afterwards from the <strong style="color:var(--dim);">Data tab</strong> via text or JSON.</div>'
+            + '</div>';
+    }
 }
 
 function buildLessonCardHtml(ln) {
@@ -1587,6 +1594,9 @@ function loadLesson(lessonName) {
     missedCardsThisSession.clear();
     currentContainer='all'; reviewMissedMode=false; reviewBookmarksMode=false;
 
+    var footer = document.getElementById('lessons-footer');
+    if (footer) { footer.classList.remove('show'); footer.innerHTML = ''; }
+
     document.getElementById('header-title').textContent = currentLesson;
     document.getElementById('back-btn').classList.add('show');
     document.querySelector('nav').classList.add('show');
@@ -1704,8 +1714,11 @@ function renderCard() {
     if (timerWrap) timerWrap.classList.add('visible');
     var timerSvg = document.querySelector('.timer-svg');
     if (timerSvg) timerSvg.classList.toggle('hidden', !timerEnabled);
-    if (cardLabel) cardLabel.textContent = 'Card '+(cardIndex+1)+' of '+shuffledCards.length;
-    if (cardBar) cardBar.style.width = (cardIndex/shuffledCards.length*100)+'%';
+    if (cardLabel) {
+        if (isSAQ) cardLabel.textContent = 'Questions · ' + (shuffledCards.length || 0) + ' items';
+        else cardLabel.textContent = 'Card '+(cardIndex+1)+' of '+shuffledCards.length;
+    }
+    if (cardBar) cardBar.style.width = isSAQ ? '100%' : (cardIndex/shuffledCards.length*100)+'%';
 
     updateBookmarkIcon();
     requestAnimationFrame(function(){ card.classList.remove('no-transition'); });
@@ -2354,6 +2367,8 @@ function exportTopicJson() {
 function switchTab(name, el) {
     document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
     document.querySelectorAll('#main-nav .nav-item').forEach(function(n){ n.classList.remove('active'); });
+    var footer = document.getElementById('lessons-footer');
+    if (footer && name !== 'lessons') { footer.classList.remove('show'); footer.innerHTML = ''; }
     document.getElementById('tab-'+name).classList.add('active');
     el.classList.add('active');
     if (name==='performance') renderStatsTab();
@@ -2549,6 +2564,8 @@ function switchToHome() {
     document.getElementById('header-title').textContent='Home';
     document.getElementById('back-btn').classList.remove('show');
     document.querySelector('nav').classList.remove('show');
+    var footer = document.getElementById('lessons-footer');
+    if (footer) { footer.classList.remove('show'); footer.innerHTML = ''; }
     document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
     document.querySelectorAll('#main-nav .nav-item').forEach(function(n){ n.classList.remove('active'); });
     document.getElementById('tab-home').classList.add('active');
