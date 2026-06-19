@@ -275,38 +275,184 @@
         .onboarding-btn-primary:hover{background:linear-gradient(135deg,#f5f5f5 0%,#bbb 100%);}
         .onboarding-info{font-size:.75rem;color:var(--dimmer);margin-top:16px;line-height:1.5;}
 
-        /* HOME */
-        .home-content{display:flex;flex-direction:column;gap:24px;padding:8px 0;}
-        .home-hero{text-align:center;padding:32px 0;background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,rgba(0,0,0,.3) 100%);border-radius:16px;border:1px solid var(--border-b);margin-bottom:16px;}
-        .home-title{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#fff 0%,#aaa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;letter-spacing:-1px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;}
-        .home-subtitle{font-size:1rem;color:var(--dim);margin-bottom:20px;line-height:1.6;}
-        .home-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
-        .home-btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);}
+        /* LESSON CREATE MODAL */
+        #lesson-create-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:2100;display:none;align-items:center;justify-content:center;padding:20px;}
+        #lesson-create-modal.show{display:flex;animation:fadeIn .35s cubic-bezier(.4,0,.2,1);}
+        .lc-modal{background:linear-gradient(135deg,var(--surface-el) 0%,var(--surface) 100%);border:1px solid var(--border-b);border-radius:16px;padding:28px 26px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 40px rgba(255,255,255,.08);animation:slideUp .4s cubic-bezier(.4,0,.2,1);}
+        .lc-title{font-size:1.25rem;font-weight:800;letter-spacing:.3px;margin-bottom:4px;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .lc-subtitle{font-size:.78rem;color:var(--dim);margin-bottom:20px;line-height:1.4;}
+        .lc-field{margin-bottom:16px;}
+        .lc-label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dimmer);margin-bottom:8px;}
+        .lc-input{width:100%;padding:12px 14px;background:var(--surface);color:var(--text);border:1px solid var(--border-b);border-radius:10px;font-size:.9rem;font-family:inherit;transition:all var(--tf);}
+        .lc-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,255,255,.1);}
+        .lc-input::placeholder{color:var(--dimmer);}
+        .lc-toggle{display:flex;border:1px solid var(--border-b);border-radius:10px;overflow:hidden;background:var(--surface);}
+        .lc-toggle-opt{all:unset;flex:1;text-align:center;padding:11px 8px;background:transparent;color:var(--dim);font-size:.74rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;transition:all var(--tf);border-right:1px solid var(--border-b);box-sizing:border-box;}
+        .lc-toggle-opt:last-child{border-right:none;}
+        .lc-toggle-opt.active{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;}
+        .lc-toggle-opt:not(.active):hover{background:rgba(255,255,255,.05);color:var(--text);}
+        .lc-hint{font-size:.7rem;color:var(--dimmer);line-height:1.55;margin-bottom:22px;padding:10px 12px;background:rgba(255,255,255,.03);border-left:2px solid var(--border-b);border-radius:6px;}
+        .lc-hint code{font-family:'Courier New',monospace;color:var(--dim);word-break:break-word;}
+        .lc-buttons{display:flex;gap:10px;}
+        .lc-buttons .onboarding-btn{flex:1;padding:11px 16px;font-size:.78rem;margin:0;}
+
+        /* MCQ TAG (badges) */
+        .tag-mcq{display:inline-block;font-size:.55rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#000;background:linear-gradient(135deg,#fff 0%,#ccc 100%);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle;}
+
+        /* MCQ STUDY MODE */
+        .mcq-wrap{display:none;flex-direction:column;gap:14px;flex:1;min-height:0;padding:8px 0;overflow-y:auto;}
+        #tab-flashcard.mcq-mode .card-container,#tab-flashcard.mcq-mode .controls,#tab-flashcard.mcq-mode .swipe-hint{display:none;}
+        #tab-flashcard.mcq-mode .mcq-wrap{display:flex;}
+        .mcq-card{position:relative;border:1.5px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:24px 20px;box-shadow:var(--sh-lg);min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;flex-shrink:0;}
+        .mcq-question{font-size:clamp(1rem,3vw,1.2rem);font-weight:600;line-height:1.5;}
+        .mcq-bookmark-icon{position:absolute;top:12px;right:12px;font-size:1.4rem;cursor:pointer;z-index:10;user-select:none;transition:all .25s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+        .mcq-bookmark-icon:hover{transform:scale(1.2) rotate(-10deg);}
+        .mcq-bookmark-icon.active{filter:drop-shadow(0 0 8px rgba(255,215,0,.6));}
+        .mcq-options{display:flex;flex-direction:column;gap:10px;}
+        .mcq-hint{font-size:.65rem;color:var(--dimmer);text-align:center;margin-top:4px;opacity:.6;letter-spacing:.3px;}
+        .mcq-option{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1.5px solid var(--border-b);background:var(--surface);color:#fff;font-size:.9rem;font-weight:500;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);touch-action:manipulation;}
+        .mcq-option:hover:not(:disabled){border-color:var(--accent);background:var(--surface-el);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.6);}
+        .mcq-option:disabled{cursor:default;}
+        .mcq-option-letter{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--border-b);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--dim);}
+        .mcq-option-text{flex:1;}
+        .mcq-option.correct{border-color:rgba(46,204,113,.6);background:rgba(46,204,113,.1);box-shadow:0 0 16px rgba(46,204,113,.15);}
+        .mcq-option.correct .mcq-option-letter{background:#2ecc71;border-color:#2ecc71;color:#000;}
+        .mcq-option.wrong{border-color:rgba(231,76,60,.6);background:rgba(231,76,60,.1);}
+        .mcq-option.wrong .mcq-option-letter{background:#e74c3c;border-color:#e74c3c;color:#fff;}
+
+        /* MCQ DB DISPLAY */
+        .mcq-db-options{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+        .db-mcq-opt{font-size:.72rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border-b);background:rgba(255,255,255,.03);color:var(--dim);}
+        .db-mcq-opt.correct{border-color:rgba(46,204,113,.4);background:rgba(46,204,113,.08);color:#2ecc71;font-weight:700;}
+        .home-content{display:flex;flex-direction:column;gap:14px;padding:4px 0 12px;}
+        .home-btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;}
         .home-btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
         .home-btn:active{transform:translateY(0) scale(.97);}
+        .home-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+        .home-btn:disabled:hover{background:var(--surface);border-color:var(--border-b);box-shadow:none;}
         .home-btn-primary{background:linear-gradient(135deg,#fff 0%,#ccc 100%);color:#000;border:none;box-shadow:0 4px 16px rgba(255,255,255,.1);}
         .home-btn-primary:hover{background:linear-gradient(135deg,#f5f5f5 0%,#bbb 100%);}
-        .home-section{display:flex;flex-direction:column;gap:12px;padding:24px;background:var(--surface-el);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh-sm);}
-        .home-sec-title{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;display:flex;gap:8px;align-items:center;}
-        .home-sec-icon{font-size:1.3rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+        .home-btn-sm{padding:9px 14px;font-size:.72rem;}
+        .home-section{display:flex;flex-direction:column;gap:12px;padding:22px;background:var(--surface-el);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh-sm);}
+        .home-sec-title{font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.8px;text-transform:uppercase;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+        .home-sec-sub{font-size:.72rem;color:var(--dimmer);line-height:1.45;margin:-4px 0 4px;}
+        .home-sec-count{margin-left:auto;font-size:.65rem;font-weight:700;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--border-b);padding:3px 9px;border-radius:10px;letter-spacing:.3px;text-transform:none;}
         .home-item{padding:8px 0;color:var(--dim);font-size:.9rem;line-height:1.5;display:flex;gap:10px;align-items:flex-start;}
         .home-item-bullet{color:var(--accent);font-weight:700;flex-shrink:0;margin-top:2px;}
-        .home-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px;}
-        .home-stat-card{background:var(--surface);border:1px solid var(--border-b);border-radius:10px;padding:16px;text-align:center;}
-        .home-stat-num{font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:4px;}
-        .home-stat-label{font-size:.7rem;color:var(--dimmer);text-transform:uppercase;letter-spacing:.5px;}
-        .home-subjects{display:flex;flex-direction:column;gap:10px;margin-top:12px;max-height:300px;overflow-y:auto;}
+        .home-subjects{display:flex;flex-direction:column;gap:8px;margin-top:4px;max-height:320px;overflow-y:auto;}
         .home-subjects::-webkit-scrollbar{width:4px;}
         .home-subjects::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
-        .home-subject-item{padding:12px 14px;background:var(--surface);border:1px solid var(--border-b);border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
-        .home-subject-name{font-weight:600;color:#fff;font-size:.9rem;}
-        .home-subject-count{font-size:.75rem;color:var(--dimmer);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:6px;font-weight:600;}
-        .home-no-subjects{color:var(--dimmer);font-size:.9rem;padding:20px;text-align:center;}
+        .home-subject-item{padding:12px 14px;background:var(--surface);border:1px solid var(--border-b);border-radius:8px;cursor:pointer;transition:all var(--tf);}
+        .home-subject-item:hover{border-color:#555;transform:translateX(2px);box-shadow:0 4px 12px rgba(0,0,0,.7);}
+        .home-subject-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+        .home-subject-name{font-weight:700;color:#fff;font-size:.9rem;}
+        .home-subject-meta{font-size:.7rem;color:var(--dimmer);margin-top:3px;}
+        .home-subject-count{font-size:.68rem;font-weight:700;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--border-b);padding:4px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+        .home-subject-count.hot{color:#000;background:#fff;border-color:#fff;}
+        .home-subject-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+        .home-subject-bar-fill{height:100%;background:linear-gradient(90deg,#fff,#888);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+        .home-no-subjects{color:var(--dimmer);font-size:.88rem;padding:18px;text-align:center;line-height:1.5;}
         .home-tip{padding:12px;background:rgba(255,255,255,.03);border-left:3px solid var(--accent);border-radius:6px;color:var(--dim);font-size:.85rem;line-height:1.5;}
         .home-tip strong{color:var(--text);font-weight:600;}
-        .home-btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+        .home-btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
         .home-btn-group .home-btn{flex:1;min-width:120px;}
         .home-db-sub{color:var(--dim);font-size:.85rem;margin-bottom:12px;line-height:1.4;}
+
+        /* HERO */
+        .hero{position:relative;padding:24px 22px 20px;background:linear-gradient(160deg,#111 0%,#0a0a0a 55%,#000 100%);border:1px solid var(--border-b);border-radius:16px;box-shadow:var(--sh-lg);overflow:hidden;}
+        .hero::before{content:'';position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(255,255,255,.07) 0%,transparent 70%);pointer-events:none;}
+        .hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);}
+        .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;position:relative;z-index:1;}
+        .hero-kicker{font-size:.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dimmer);margin-bottom:6px;}
+        .hero-title{font-size:1.75rem;font-weight:900;letter-spacing:-.5px;line-height:1;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+        .hero-date{font-size:.72rem;color:var(--dim);letter-spacing:.3px;}
+        .hero-streak{text-align:center;padding:12px 16px;border:1px solid var(--border-b);border-radius:12px;background:rgba(255,255,255,.03);min-width:72px;flex-shrink:0;}
+        .hero-streak-num{font-size:1.8rem;font-weight:900;line-height:1;color:#fff;}
+        .hero-streak-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dimmer);margin-top:4px;}
+        .hero-streak-best{font-size:.58rem;color:var(--dimmer);margin-top:5px;letter-spacing:.2px;}
+        .hero-mission{font-size:.92rem;color:var(--text);line-height:1.55;margin-bottom:16px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;position:relative;z-index:1;}
+        .hero-mission strong{color:#fff;font-weight:800;}
+        .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;position:relative;z-index:1;}
+        .hero-stat{padding:10px 8px;background:var(--surface);border:1px solid var(--border-b);border-radius:10px;text-align:center;}
+        .hero-stat-num{font-size:1.15rem;font-weight:800;color:#fff;line-height:1.1;margin-bottom:4px;}
+        .hero-stat-num.accent{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.35);}
+        .hero-stat-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--dimmer);}
+        .hero-progress{position:relative;z-index:1;margin-bottom:14px;}
+        .hero-progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;}
+        .hero-progress-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);}
+        .hero-progress-pct{font-size:.68rem;font-weight:700;color:#fff;}
+        .hero-progress-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+        .hero-progress-fill{height:100%;background:linear-gradient(90deg,#fff,#aaa);border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(255,255,255,.25);}
+        .hero-progress-sub{font-size:.65rem;color:var(--dimmer);margin-top:5px;}
+        .hero-actions{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1;margin-bottom:16px;}
+        .hero-actions .home-btn{flex:1;min-width:110px;padding:11px 14px;font-size:.75rem;}
+        .hero-actions .home-btn-primary{flex:1.4;}
+        .hero-calendar{position:relative;z-index:1;}
+        .hero-calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
+        .hero-calendar-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dimmer);}
+        .hero-calendar-today{font-size:.62rem;color:var(--dim);}
+        .cal-legend{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+        .cal-legend-label{font-size:.58rem;color:var(--dimmer);margin-right:2px;}
+        .cal-legend-cell{width:10px;height:10px;border-radius:2px;background:#141414;border:1px solid var(--border);}
+        .cal-legend-cell.lvl1{background:rgba(46,204,113,.18);border-color:rgba(46,204,113,.25);}
+        .cal-legend-cell.lvl2{background:rgba(46,204,113,.38);border-color:rgba(46,204,113,.4);}
+        .cal-legend-cell.lvl3{background:rgba(46,204,113,.62);border-color:rgba(46,204,113,.65);}
+        .cal-legend-cell.lvl4{background:#2ecc71;border-color:#2ecc71;}
+        .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+        .cal-nav-btn{all:unset;width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-b);border-radius:8px;background:var(--surface);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:all var(--tf);user-select:none;touch-action:manipulation;}
+        .cal-nav-btn:hover:not(:disabled){background:var(--surface-el);border-color:var(--accent);transform:translateY(-1px);}
+        .cal-nav-btn:active:not(:disabled){transform:translateY(0) scale(.92);}
+        .cal-nav-btn:disabled{opacity:.25;cursor:default;}
+        .cal-nav-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#fff;text-align:center;flex:1;}
+        .cal-month-summary{font-size:.66rem;color:var(--dimmer);text-align:center;margin-bottom:12px;line-height:1.5;}
+        .cal-month-summary strong{color:var(--dim);font-weight:700;}
+        .cal-month{animation:fadeIn .25s cubic-bezier(.4,0,.2,1);}
+        .cal-month-title{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:6px;}
+        .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;max-width:266px;margin-left:auto;margin-right:auto;}
+        .cal-dow span{font-size:.56rem;text-align:center;color:var(--dimmer);font-weight:700;}
+        .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:266px;margin:0 auto;}
+        .cal-day{aspect-ratio:1;border-radius:4px;background:#141414;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;}
+        .cal-day.empty{background:transparent;border:none;pointer-events:none;}
+        .cal-day-num{font-size:.56rem;font-weight:700;color:var(--dimmer);line-height:1;}
+        .cal-day.lvl1{background:rgba(46,204,113,.14);border-color:rgba(46,204,113,.22);}
+        .cal-day.lvl1 .cal-day-num{color:rgba(46,204,113,.75);}
+        .cal-day.lvl2{background:rgba(46,204,113,.32);border-color:rgba(46,204,113,.38);}
+        .cal-day.lvl2 .cal-day-num{color:rgba(46,204,113,.9);}
+        .cal-day.lvl3{background:rgba(46,204,113,.58);border-color:rgba(46,204,113,.62);}
+        .cal-day.lvl3 .cal-day-num{color:#fff;}
+        .cal-day.lvl4{background:#2ecc71;border-color:#2ecc71;}
+        .cal-day.lvl4 .cal-day-num{color:#000;font-weight:800;}
+        .cal-day.today{box-shadow:0 0 0 2px #fff;}
+        .cal-day.future{opacity:.28;}
+
+        /* DAILY PLAN */
+        .plan-tier{margin-top:14px;}
+        .plan-tier:first-child{margin-top:0;}
+        .plan-tier-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+        .plan-tier-rank{font-size:.65rem;font-weight:800;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#000;flex-shrink:0;}
+        .plan-tier-rank.dim{background:var(--surface);color:var(--dim);border:1px solid var(--border-b);}
+        .plan-tier-title{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#fff;}
+        .plan-tier-desc{font-size:.65rem;color:var(--dimmer);margin-left:auto;text-align:right;}
+        .plan-row{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border-b);border-radius:8px;margin-top:6px;cursor:pointer;transition:all var(--tf);}
+        .plan-row:hover{border-color:#555;transform:translateX(2px);box-shadow:0 4px 12px rgba(0,0,0,.7);}
+        .plan-row:active{transform:translateX(0) scale(.98);}
+        .plan-row-num{font-size:.62rem;font-weight:800;color:var(--dimmer);width:18px;text-align:center;flex-shrink:0;}
+        .plan-row-main{flex:1;min-width:0;}
+        .plan-row-name{font-weight:700;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .plan-row-path{font-size:.67rem;color:var(--dimmer);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .plan-row-action{font-size:.65rem;color:var(--dim);margin-top:3px;}
+        .plan-row-right{text-align:right;flex-shrink:0;}
+        .plan-row-badge{font-size:.65rem;font-weight:700;color:#000;background:#fff;padding:4px 8px;border-radius:10px;white-space:nowrap;}
+        .plan-row-badge.dim{background:transparent;color:var(--dim);border:1px solid var(--border-b);}
+        .plan-row-mastery{font-size:.6rem;color:var(--dimmer);margin-top:4px;}
+        .plan-row-bar{width:48px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:5px;margin-left:auto;}
+        .plan-row-bar-fill{height:100%;background:#fff;border-radius:2px;}
+        .plan-mastered{margin-top:12px;border:1px dashed var(--border-b);border-radius:8px;padding:10px 12px;}
+        .plan-mastered-head{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--dimmer);margin-bottom:6px;}
+        .plan-mastered-tags{display:flex;flex-wrap:wrap;gap:5px;}
+        .plan-mastered-tag{font-size:.62rem;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:3px 8px;border-radius:6px;}
+        .plan-row-badge.queue{background:transparent;color:var(--dimmer);border:1px dashed var(--border-b);}
+        .plan-queue-note{font-size:.68rem;color:var(--dimmer);margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed var(--border-b);border-radius:8px;line-height:1.45;}
 
         /* SIDEBAR CLOSE BTN */
         .sb-close-btn{all:unset;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;color:var(--dim);font-size:1.1rem;transition:all var(--tf);flex-shrink:0;}
@@ -410,11 +556,15 @@
             nav{padding-bottom:max(env(safe-area-inset-bottom),8px);}
             .nav-item{padding:12px 8px;font-size:.7rem;}
             .stats-grid{grid-template-columns:repeat(2,1fr);}
+            .hero-stats{grid-template-columns:repeat(2,1fr);}
+            .hero-title{font-size:1.45rem;}
+            .hero-actions .home-btn{min-width:0;}
+            .plan-tier-desc{display:none;}
         }
         @media(max-height:600px){
             #tab-flashcard{padding:8px 12px 4px;}
             .controls{margin-top:6px;}
-            .swipe-hint{display:none;}
+            .swipe-hint,.mcq-hint{display:none;}
         }
         @media(max-height:500px) and (orientation:landscape){.card-face{font-size:.95rem;padding:12px;}}
     </style>
@@ -454,6 +604,29 @@
         </div>
         <div class="onboarding-buttons">
             <button class="onboarding-btn onboarding-btn-primary" onclick="completeOnboarding()">Get Started</button>
+        </div>
+    </div>
+</div>
+
+<div id="lesson-create-modal" onclick="if(event.target===this) closeLessonCreateModal()">
+    <div class="lc-modal">
+        <div class="lc-title">New Lesson</div>
+        <div class="lc-subtitle">Name it, then choose how it's studied</div>
+        <div class="lc-field">
+            <label class="lc-label">Lesson ID</label>
+            <input type="text" id="lc-name-input" class="lc-input" placeholder="e.g. Lesson 1" maxlength="60" onkeydown="if(event.key==='Enter')confirmCreateLesson()">
+        </div>
+        <div class="lc-field">
+            <label class="lc-label">Card Type</label>
+            <div class="lc-toggle" id="lc-type-toggle">
+                <button type="button" class="lc-toggle-opt active" data-type="flashcard" onclick="setLessonCreateType('flashcard')">🃏 Flashcards</button>
+                <button type="button" class="lc-toggle-opt" data-type="mcq" onclick="setLessonCreateType('mcq')">☑️ MCQ</button>
+            </div>
+        </div>
+        <div class="lc-hint" id="lc-type-hint">Cards behave as usual — add Q/A pairs from the Data tab after creating.</div>
+        <div class="lc-buttons">
+            <button class="onboarding-btn" onclick="closeLessonCreateModal()">Cancel</button>
+            <button class="onboarding-btn onboarding-btn-primary" onclick="confirmCreateLesson()">Create Lesson</button>
         </div>
     </div>
 </div>
@@ -503,52 +676,102 @@
         <!-- HOME -->
         <div id="tab-home" class="tab-view active">
             <div class="home-content">
-                <div class="home-hero">
-                    <div class="home-title">MonoFlash</div>
-                    <div class="home-subtitle">Master knowledge with intelligent spaced repetition<br><span style="font-size:.75rem;color:var(--dimmer);letter-spacing:.5px;">crafted by <strong style="color:var(--dim);">Wasif Akand</strong></span></div>
-                    <div class="home-cta">
-                        <button class="home-btn home-btn-primary" onclick="createQuickStart()">Quick Start</button>
-                        <button class="home-btn" onclick="toggleSidebar()">Browse Topics</button>
+
+                <section class="hero" id="hero">
+                    <div class="hero-top">
+                        <div class="hero-brand">
+                            <div class="hero-kicker">Daily Command Center</div>
+                            <h2 class="hero-title">MonoFlash</h2>
+                            <div class="hero-date" id="hero-date"></div>
+                        </div>
+                        <div class="hero-streak">
+                            <div class="hero-streak-num" id="hero-streak-num">0</div>
+                            <div class="hero-streak-label">Day Streak · Quota</div>
+                            <div class="hero-streak-best" id="hero-streak-best"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="home-section">
-                    <div class="home-sec-title"><span class="home-sec-icon">📈</span><span>Your Progress</span></div>
-                    <div class="home-stats-grid">
-                        <div class="home-stat-card"><div class="home-stat-num" id="home-stat-total-subjects">0</div><div class="home-stat-label">Subjects</div></div>
-                        <div class="home-stat-card"><div class="home-stat-num" id="home-stat-total-topics">0</div><div class="home-stat-label">Topics</div></div>
-                        <div class="home-stat-card"><div class="home-stat-num" id="home-stat-total-lessons">0</div><div class="home-stat-label">Lessons</div></div>
-                        <div class="home-stat-card"><div class="home-stat-num" id="home-stat-total-cards">0</div><div class="home-stat-label">Cards</div></div>
+                    <div class="hero-mission" id="hero-mission">Loading your daily plan…</div>
+                    <div class="hero-stats" id="hero-stats"></div>
+                    <div class="hero-progress">
+                        <div class="hero-progress-head">
+                            <span class="hero-progress-label">Today&rsquo;s Goal</span>
+                            <span class="hero-progress-pct" id="hero-progress-pct">0%</span>
+                        </div>
+                        <div class="hero-progress-track">
+                            <div class="hero-progress-fill" id="hero-progress-fill" style="width:0%"></div>
+                        </div>
+                        <div class="hero-progress-sub" id="hero-progress-sub"></div>
                     </div>
-                </div>
-                <div class="home-section">
-                    <div class="home-sec-title"><span class="home-sec-icon">📚</span><span>Your Subjects</span></div>
-                    <div class="home-subjects" id="home-subjects-list"><div class="home-no-subjects">No subjects yet. Create one to begin!</div></div>
-                </div>
-                <div class="home-section">
-                    <div class="home-sec-title"><span class="home-sec-icon">🌐</span><span>Backup & Restore</span></div>
-                    <p class="home-db-sub">Export or import ALL subjects, topics, lessons, and cards in one file</p>
-                    <input id="full-backup-input" type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
-                    <div class="home-btn-group">
-                        <button class="home-btn" onclick="exportFullBackup()">📦 Export ALL Data</button>
-                        <button class="home-btn" onclick="document.getElementById('full-backup-input').click()">📥 Import ALL Data</button>
+                    <div class="hero-actions">
+                        <button class="home-btn home-btn-primary" id="hero-start-btn" onclick="startDailyPlan()">Start Priority #1</button>
+                        <button class="home-btn home-btn-sm" onclick="toggleSidebar()">Browse</button>
+                        <button class="home-btn home-btn-sm" onclick="createQuickStart()">+ Quick Start</button>
                     </div>
-                </div>
-                <div class="home-section">
-                    <div class="home-sec-title"><span class="home-sec-icon">⚙️</span><span>Data Management</span></div>
-                    <div class="home-btn-group">
-                        <button class="home-btn" onclick="resetAllData()" style="background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.5);color:#e74c3c;">🗑️ Clear All Data</button>
-                        <button class="home-btn" onclick="downloadDatabaseJson()">💾 Download JSON</button>
+                    <div class="hero-calendar">
+                        <div class="hero-calendar-head">
+                            <span class="hero-calendar-label">Study Calendar</span>
+                            <span class="hero-calendar-today" id="hero-calendar-today"></span>
+                        </div>
+                        <div class="cal-nav">
+                            <button class="cal-nav-btn" id="cal-prev-btn" onclick="shiftCalendarMonth(-1)" aria-label="Previous month">&#8249;</button>
+                            <div class="cal-nav-label" id="cal-nav-label">&nbsp;</div>
+                            <button class="cal-nav-btn" id="cal-next-btn" onclick="shiftCalendarMonth(1)" aria-label="Next month">&#8250;</button>
+                        </div>
+                        <div class="cal-month-summary" id="cal-month-summary"></div>
+                        <div class="cal-legend">
+                            <span class="cal-legend-label">Less</span>
+                            <span class="cal-legend-cell"></span>
+                            <span class="cal-legend-cell lvl1"></span>
+                            <span class="cal-legend-cell lvl2"></span>
+                            <span class="cal-legend-cell lvl3"></span>
+                            <span class="cal-legend-cell lvl4"></span>
+                            <span class="cal-legend-label">Quota met</span>
+                        </div>
+                        <div id="study-calendar"></div>
                     </div>
-                </div>
-                <div class="home-section">
-                    <div class="home-sec-title"><span class="home-sec-icon">✨</span><span>Getting Started</span></div>
+                </section>
+
+                <section class="home-section" id="daily-plan-section">
+                    <div class="home-sec-title">
+                        <span>Today&rsquo;s Plan</span>
+                        <span class="home-sec-count" id="plan-count"></span>
+                    </div>
+                    <div class="home-sec-sub" id="plan-subtitle">Prioritized across every subject and lesson</div>
+                    <div id="daily-plan-content"></div>
+                </section>
+
+                <section class="home-section" id="subject-map-section">
+                    <div class="home-sec-title">
+                        <span>Subject Map</span>
+                        <span class="home-sec-count" id="subject-map-count"></span>
+                    </div>
+                    <div class="home-sec-sub">Mastery progress and what each subject needs next</div>
+                    <div class="home-subjects" id="home-subjects-list">
+                        <div class="home-no-subjects">No subjects yet. Create one to begin!</div>
+                    </div>
+                </section>
+
+                <div class="home-section" id="getting-started-section" style="display:none;">
+                    <div class="home-sec-title"><span>Getting Started</span></div>
                     <div class="home-item"><span class="home-item-bullet">1.</span><span>Create a <strong>Subject</strong> → add a <strong>Topic</strong> inside it</span></div>
                     <div class="home-item"><span class="home-item-bullet">2.</span><span>Select the topic from the sidebar — you'll see the <strong>Lessons screen</strong></span></div>
-                    <div class="home-item"><span class="home-item-bullet">3.</span><span>Add lessons with cards (use the Data tab or ##Lesson format)</span></div>
-                    <div class="home-item"><span class="home-item-bullet">4.</span><span>Click a lesson to start reviewing flashcards</span></div>
+                    <div class="home-item"><span class="home-item-bullet">3.</span><span>+ New Lesson → pick <strong>Flashcards</strong> or <strong>MCQ</strong>, then add cards from the Data tab</span></div>
+                    <div class="home-item"><span class="home-item-bullet">4.</span><span>Click a lesson to start reviewing — MCQ lessons are tap-to-answer, auto-graded by SRS</span></div>
                     <div class="home-item"><span class="home-item-bullet">5.</span><span>Use the ← Back button to return to lesson list anytime</span></div>
-                    <div class="home-tip" style="margin-top:8px;"><strong>Import format:</strong> ##Lesson Name on its own line, then Q -!- A pairs below it</div>
+                    <div class="home-tip" style="margin-top:8px;"><strong>Import format:</strong> Flashcards → Question -!- Answer &nbsp;·&nbsp; MCQ → Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</div>
                 </div>
+
+                <section class="home-section">
+                    <div class="home-sec-title"><span>Data &amp; Backup</span></div>
+                    <p class="home-db-sub">Export or import everything in one file, or wipe local data.</p>
+                    <input id="full-backup-input" type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
+                    <div class="home-btn-group">
+                        <button class="home-btn" onclick="exportFullBackup()">Export All</button>
+                        <button class="home-btn" onclick="document.getElementById('full-backup-input').click()">Import All</button>
+                        <button class="home-btn" onclick="downloadDatabaseJson()">Download JSON</button>
+                        <button class="home-btn" onclick="resetAllData()" style="background:rgba(255,255,255,.06);border-color:var(--border-b);color:var(--dim);">Clear All</button>
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -592,6 +815,14 @@
                     <div class="card-face" onclick="flipCard()" id="card-front">Select a topic to begin</div>
                     <div class="card-face card-back" onclick="flipCard()" id="card-back">Your journey starts here</div>
                 </div>
+            </div>
+            <div class="mcq-wrap" id="mcq-wrap">
+                <div class="mcq-card">
+                    <div class="mcq-bookmark-icon" id="mcq-bookmark-icon" onclick="toggleBookmark(event)">☆</div>
+                    <div class="mcq-question" id="mcq-question"></div>
+                </div>
+                <div class="mcq-options" id="mcq-options-wrap"></div>
+                <div class="mcq-hint">Tap an option &nbsp;·&nbsp; 1-4 to answer &nbsp;·&nbsp; B bookmark &nbsp;·&nbsp; / back</div>
             </div>
             <div class="controls">
                 <button class="btn" onclick="nextCard(false)">Missed</button>
@@ -678,6 +909,44 @@ function setRing(pct) { pringFill.style.strokeDashoffset = CIRC*(1-pct/100); }
 var cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent') || '{}');
 var srsData     = JSON.parse(localStorage.getItem('monoFlashSRSData')     || '{}');
 var bookmarks   = JSON.parse(localStorage.getItem('monoFlashBookmarks')   || '{}');
+var dailyLog    = JSON.parse(localStorage.getItem('monoFlashDailyLog')    || '{}');
+
+// ── DAILY ACTIVITY LOG (calendar + streak) ─────────────────────────────
+var DAILY_CARD_QUOTA = 40;
+
+function getDailyQuota() { return DAILY_CARD_QUOTA; }
+
+function dayKey(offsetDays) {
+    var d = new Date();
+    if (offsetDays) d.setDate(d.getDate() + offsetDays);
+    var m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return d.getFullYear()+'-'+m+'-'+day;
+}
+function parseDayKey(k) {
+    var p = k.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+function logReview() {
+    var k = dayKey(0);
+    dailyLog[k] = (dailyLog[k]||0) + 1;
+    try { localStorage.setItem('monoFlashDailyLog', JSON.stringify(dailyLog)); } catch(e) {}
+}
+function meetsDailyQuota(count) { return (count || 0) >= getDailyQuota(); }
+function getActivityLevel(count) {
+    var q = getDailyQuota();
+    if (!count || count <= 0) return 0;
+    var pct = count / q;
+    if (pct >= 1) return 4;
+    if (pct >= 0.75) return 3;
+    if (pct >= 0.5) return 2;
+    return 1;
+}
+function computeStreak() {
+    var streak = 0;
+    var i = meetsDailyQuota(dailyLog[dayKey(0)] || 0) ? 0 : 1;
+    while (meetsDailyQuota(dailyLog[dayKey(-i)] || 0)) { streak++; i++; }
+    return streak;
+}
 
 // Migration: convert old flat cardContent[subject][topic] = [{q,a}] to new format
 function migrateData() {
@@ -743,6 +1012,17 @@ function getLessonBookmarks(subj, topic, lesson) {
     if (!bookmarks[subj][topic]) bookmarks[subj][topic] = {};
     if (!bookmarks[subj][topic][lesson]) bookmarks[subj][topic][lesson] = [];
     return bookmarks[subj][topic][lesson];
+}
+function getLessonType(subj, topic, lesson) {
+    var t = getTopicObj(subj, topic);
+    if (!t || !t.lessonTypes) return 'flashcard';
+    return t.lessonTypes[lesson] || 'flashcard';
+}
+function setLessonType(subj, topic, lesson, type) {
+    var t = getTopicObj(subj, topic);
+    if (!t) return;
+    if (!t.lessonTypes) t.lessonTypes = {};
+    t.lessonTypes[lesson] = type;
 }
 function totalCardsInTopic(subj, topic) {
     var lessons = getLessons(subj, topic);
@@ -1028,6 +1308,7 @@ function renderLessonsScreen() {
     } else {
         lessonNames.forEach(function(ln) {
             var cards = lessons[ln];
+            var lType = getLessonType(currentSubject, currentTopic, ln);
             var srs = getLessonSRS(currentSubject, currentTopic, ln);
             var dueCount = srs.filter(function(s){ return isDue(s); }).length;
             var masteredCount = srs.filter(function(s){ return s.interval>=7; }).length;
@@ -1040,11 +1321,11 @@ function renderLessonsScreen() {
             html += '<div class="lesson-card" onclick="loadLesson(\''+escAttr(ln)+'\')">';
             html += '<div class="lesson-card-inner">';
             html += '<div class="lesson-card-top">';
-            html += '<div class="lesson-card-name">'+escHtml(ln)+'</div>';
+            html += '<div class="lesson-card-name">'+escHtml(ln)+(lType==='mcq'?'<span class="tag-mcq">MCQ</span>':'')+'</div>';
             html += '<span class="lesson-card-del" onclick="event.stopPropagation();deleteLesson(\''+escAttr(ln)+'\')" title="Delete lesson">×</span>';
             html += '</div>';
             html += '<div class="lesson-card-meta">';
-            html += '<div class="lesson-meta-item">🃏 <span>'+cards.length+' cards</span></div>';
+            html += '<div class="lesson-meta-item">'+(lType==='mcq'?'☑️':'🃏')+' <span>'+cards.length+' cards</span></div>';
             html += '<div class="lesson-meta-item">🔔 <span>'+dueCount+' due</span></div>';
             html += '<div class="lesson-meta-item">⭐ <span>'+masteredCount+' mastered</span></div>';
             html += '<div class="lesson-meta-item">🕐 <span>'+lastStr+'</span></div>';
@@ -1058,34 +1339,63 @@ function renderLessonsScreen() {
 
     // Add lesson section
     html += '<div class="lessons-add-section">';
-    html += '<div class="lessons-add-title">+ Add Lesson</div>';
-    html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">';
-    html += '<input id="new-lesson-name" type="text" placeholder="Lesson name (e.g. Lesson 1)" style="flex:1;min-width:160px;background:var(--surface-el);color:#fff;border:1px solid var(--border-b);padding:10px 14px;border-radius:8px;font-size:.9rem;font-family:inherit;" onkeydown="if(event.key===\'Enter\')addLessonQuick()">';
-    html += '<button class="btn btn-primary" onclick="addLessonQuick()" style="padding:10px 20px;font-size:.85rem;white-space:nowrap;">Add</button>';
-    html += '</div>';
-    html += '<div style="font-size:.75rem;color:var(--dimmer);margin-bottom:8px;">Or go to the <strong style="color:var(--dim);">Data tab</strong> to import lessons + cards via text or JSON</div>';
+    html += '<button class="btn btn-primary" onclick="openLessonCreateModal()" style="width:100%;padding:13px 20px;font-size:.85rem;">+ New Lesson</button>';
+    html += '<div style="font-size:.75rem;color:var(--dimmer);margin-top:10px;">Cards are added afterwards from the <strong style="color:var(--dim);">Data tab</strong> via text or JSON</div>';
     html += '</div>';
 
     html += '</div></div>';
     container.innerHTML = html;
 }
 
-function addLessonQuick() {
-    var inp = document.getElementById('new-lesson-name');
+// ── LESSON CREATE MODAL ────────────────────────────────────────────────
+var lessonCreateType = 'flashcard';
+function openLessonCreateModal() {
+    lessonCreateType = 'flashcard';
+    var inp = document.getElementById('lc-name-input');
+    if (inp) inp.value = '';
+    updateLessonCreateToggleUI();
+    document.getElementById('lesson-create-modal').classList.add('show');
+    setTimeout(function(){ if (inp) inp.focus(); }, 60);
+}
+function closeLessonCreateModal() {
+    document.getElementById('lesson-create-modal').classList.remove('show');
+}
+function setLessonCreateType(t) {
+    lessonCreateType = t;
+    updateLessonCreateToggleUI();
+}
+function updateLessonCreateToggleUI() {
+    document.querySelectorAll('#lc-type-toggle .lc-toggle-opt').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-type') === lessonCreateType);
+    });
+    var hint = document.getElementById('lc-type-hint');
+    if (!hint) return;
+    if (lessonCreateType === 'mcq') {
+        hint.innerHTML = 'MCQ lesson. After creating, add questions from the <strong style="color:var(--dim);">Data tab</strong> using:<br><code>Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</code><br>The correct answer must match one option\u2019s text exactly. Studied with tap-to-answer, auto-graded by SRS.';
+    } else {
+        hint.textContent = 'Cards behave as usual — add Q/A pairs from the Data tab after creating, using Question -!- Answer.';
+    }
+}
+function confirmCreateLesson() {
+    var inp = document.getElementById('lc-name-input');
     if (!inp) return;
     var name = inp.value.trim();
-    if (!name){ inp.focus(); return; }
+    if (!name) { inp.focus(); return; }
     if (!cardContent[currentSubject][currentTopic]) cardContent[currentSubject][currentTopic]={lessons:{}};
     if (!cardContent[currentSubject][currentTopic].lessons) cardContent[currentSubject][currentTopic].lessons={};
-    if (cardContent[currentSubject][currentTopic].lessons[name]){ alert('Lesson already exists!'); return; }
+    if (cardContent[currentSubject][currentTopic].lessons[name]) { alert('Lesson already exists!'); return; }
     cardContent[currentSubject][currentTopic].lessons[name] = [];
+    setLessonType(currentSubject, currentTopic, name, lessonCreateType);
     saveData(); renderSidebar(); updateHomeStats(); renderHomeSubjects();
+    closeLessonCreateModal();
     renderLessonsScreen();
 }
+
 
 function deleteLesson(lessonName) {
     if (!confirm('Delete lesson "'+lessonName+'" and all its cards?')) return;
     delete cardContent[currentSubject][currentTopic].lessons[lessonName];
+    if (cardContent[currentSubject][currentTopic].lessonTypes) delete cardContent[currentSubject][currentTopic].lessonTypes[lessonName];
     if (srsData[currentSubject]&&srsData[currentSubject][currentTopic]) delete srsData[currentSubject][currentTopic][lessonName];
     if (bookmarks[currentSubject]&&bookmarks[currentSubject][currentTopic]) delete bookmarks[currentSubject][currentTopic][lessonName];
     if (currentLesson===lessonName) { currentLesson=null; }
@@ -1130,7 +1440,7 @@ function buildShuffledCards() {
     if (!currentSubject||!currentTopic||!currentLesson) { shuffledCards=[]; return; }
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var srs = getLessonSRS(currentSubject, currentTopic, currentLesson);
-    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i]||createSRS(),_index:i}; });
+    var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[i]||createSRS(),_index:i}; });
     dueCards = w.filter(function(c){ return isDue(c.srs); });
     shuffledCards = shuffle(dueCards.length ? dueCards : w);
 }
@@ -1149,14 +1459,21 @@ function toggleBookmark(e) {
     renderContSel();
 }
 function updateBookmarkIcon() {
-    var icon = document.getElementById('bookmark-icon');
-    if (!currentLesson||!shuffledCards.length||cardIndex>=shuffledCards.length){ icon.style.display='none'; return; }
-    icon.style.display='block';
+    var icons = [document.getElementById('bookmark-icon'), document.getElementById('mcq-bookmark-icon')].filter(Boolean);
+    if (!currentLesson||!shuffledCards.length||cardIndex>=shuffledCards.length){
+        icons.forEach(function(icon){ icon.style.display='none'; });
+        return;
+    }
     var cardIdx = shuffledCards[cardIndex]._index;
     var bmList = getLessonBookmarks(currentSubject, currentTopic, currentLesson);
     var isBookmarked = bmList.indexOf(cardIdx)>-1;
-    icon.textContent = isBookmarked ? '★' : '☆';
-    icon.className = isBookmarked ? 'bookmark-icon active' : 'bookmark-icon';
+    icons.forEach(function(icon){
+        icon.style.display='block';
+        icon.textContent = isBookmarked ? '★' : '☆';
+        icon.className = icon.id==='mcq-bookmark-icon'
+            ? (isBookmarked ? 'mcq-bookmark-icon active' : 'mcq-bookmark-icon')
+            : (isBookmarked ? 'bookmark-icon active' : 'bookmark-icon');
+    });
 }
 function getBookmarkCount() {
     if (!currentLesson) return 0;
@@ -1170,6 +1487,7 @@ function renderCard() {
     var timerWrap=document.getElementById('timer-wrap');
     var cardLabel=document.getElementById('timer-card-label');
     var cardBar=document.getElementById('timer-card-bar');
+    var tabEl=document.getElementById('tab-flashcard');
 
     // CRITICAL FIX: instantly snap to front face before updating text
     card.classList.add('no-transition');
@@ -1177,15 +1495,26 @@ function renderCard() {
     void card.offsetHeight;
 
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) {
+        if (tabEl) tabEl.classList.remove('mcq-mode');
         front.textContent = currentLesson ? 'Session complete! Tap Study Again.' : 'Select a topic to begin';
         back.textContent  = currentLesson ? '' : 'Browse your subjects';
         if (timerWrap) timerWrap.classList.remove('visible');
         document.getElementById('bookmark-icon').style.display='none';
+        updateBookmarkIcon();
         requestAnimationFrame(function(){ card.classList.remove('no-transition'); });
         return;
     }
-    front.textContent = shuffledCards[cardIndex].q;
-    back.textContent  = shuffledCards[cardIndex].a;
+
+    var cur = shuffledCards[cardIndex];
+    var isMCQ = cur.type === 'mcq';
+    if (tabEl) tabEl.classList.toggle('mcq-mode', isMCQ);
+
+    if (isMCQ) {
+        renderMCQOptions(cur);
+    } else {
+        front.textContent = cur.q;
+        back.textContent  = cur.a;
+    }
 
     // Update card progress — always show the progress wrap during a session
     if (timerWrap) timerWrap.classList.add('visible');
@@ -1197,8 +1526,53 @@ function renderCard() {
     updateBookmarkIcon();
     requestAnimationFrame(function(){ card.classList.remove('no-transition'); });
 }
+
+// ── MCQ STUDY MODE ─────────────────────────────────────────────────────
+var mcqLocked = false;
+function renderMCQOptions(c) {
+    mcqLocked = false;
+    var qEl = document.getElementById('mcq-question');
+    var optsWrap = document.getElementById('mcq-options-wrap');
+    if (qEl) qEl.textContent = c.q;
+    if (!optsWrap) return;
+    optsWrap.innerHTML = '';
+    var shuffledOpts = shuffle((c.options||[]).slice());
+    shuffledOpts.forEach(function(opt, idx) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mcq-option';
+        var letter = document.createElement('span');
+        letter.className = 'mcq-option-letter';
+        letter.textContent = String.fromCharCode(65+idx);
+        var txt = document.createElement('span');
+        txt.className = 'mcq-option-text';
+        txt.textContent = opt;
+        b.appendChild(letter); b.appendChild(txt);
+        b.onclick = function(){ selectMCQOption(opt, b); };
+        optsWrap.appendChild(b);
+    });
+}
+function selectMCQOption(opt, btnEl) {
+    if (mcqLocked) return;
+    mcqLocked = true;
+    stopTimer();
+    var cur = shuffledCards[cardIndex];
+    if (!cur) return;
+    var correctNorm = String(cur.correct||'').trim().toLowerCase();
+    var isCorrect = String(opt||'').trim().toLowerCase() === correctNorm;
+    var allBtns = document.querySelectorAll('#mcq-options-wrap .mcq-option');
+    allBtns.forEach(function(b){
+        b.disabled = true;
+        var t = b.querySelector('.mcq-option-text');
+        if (t && t.textContent.trim().toLowerCase() === correctNorm) b.classList.add('correct');
+    });
+    if (!isCorrect) btnEl.classList.add('wrong');
+    setTimeout(function(){ nextCard(isCorrect); }, isCorrect ? 550 : 1100);
+}
+
 function flipCard() {
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) return;
+    if (shuffledCards[cardIndex].type === 'mcq') return;
     document.getElementById('active-card').classList.toggle('flipped');
 }
 function previousCard() {
@@ -1217,6 +1591,7 @@ function nextCard(quality) {
         if (!quality) missedCardsThisSession.add(cur._index);
         var srs = getLessonSRS(currentSubject, currentTopic, currentLesson);
         srs[cur._index] = cur.srs;
+        logReview();
         saveLocal();
         sessionStats.total++;
         if (quality) sessionStats.correct++;
@@ -1415,12 +1790,12 @@ function selectContainer(id) {
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var srs   = getLessonSRS(currentSubject, currentTopic, currentLesson);
     if (id==='all') {
-        var w = cards.map(function(c,i){ return {q:c.q,a:c.a,srs:srs[i]||createSRS(),_index:i}; });
+        var w = cards.map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[i]||createSRS(),_index:i}; });
         var due = w.filter(function(c){ return isDue(c.srs); });
         shuffledCards = shuffle(due.length?due:w);
     } else {
         var s0=id*CARDS_PER_CONTAINER, e0=Math.min(s0+CARDS_PER_CONTAINER,cards.length);
-        var w2=cards.slice(s0,e0).map(function(c,i){ return {q:c.q,a:c.a,srs:srs[s0+i]||createSRS(),_index:s0+i}; });
+        var w2=cards.slice(s0,e0).map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,srs:srs[s0+i]||createSRS(),_index:s0+i}; });
         var due2=w2.filter(function(c){ return isDue(c.srs); });
         shuffledCards=shuffle(due2.length?due2:w2);
     }
@@ -1432,7 +1807,7 @@ function toggleReviewMissed() {
     if (reviewMissedMode) {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
-        shuffledCards=shuffle(Array.from(missedCardsThisSession).map(function(i){ return {q:cards[i].q,a:cards[i].a,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
+        shuffledCards=shuffle(Array.from(missedCardsThisSession).map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
     } else { selectContainer(currentContainer); }
     renderCard(); renderContSel();
 }
@@ -1443,7 +1818,7 @@ function toggleReviewBookmarks() {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
         var bmIdxs=getLessonBookmarks(currentSubject,currentTopic,currentLesson);
-        shuffledCards=shuffle(bmIdxs.map(function(i){ return {q:cards[i].q,a:cards[i].a,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
+        shuffledCards=shuffle(bmIdxs.map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
     } else { selectContainer(currentContainer); }
     renderCard(); renderContSel();
 }
@@ -1465,6 +1840,22 @@ function renderContStats(allCards) {
 }
 
 // ── DATABASE TAB ───────────────────────────────────────────────────────
+function dbCardContentHtml(c) {
+    var html = '<div class="db-item-content"><div class="db-key">'+escHtml(c.q)+'</div>';
+    if (c.type === 'mcq') {
+        html += '<div class="mcq-db-options">';
+        (c.options||[]).forEach(function(opt){
+            var isCorrect = String(opt).trim().toLowerCase() === String(c.correct||'').trim().toLowerCase();
+            html += '<span class="db-mcq-opt'+(isCorrect?' correct':'')+'">'+(isCorrect?'✓ ':'')+escHtml(opt)+'</span>';
+        });
+        html += '</div>';
+    } else {
+        html += '<div class="db-val">'+escHtml(c.a)+'</div>';
+    }
+    html += '</div>';
+    return html;
+}
+
 function renderDbList() {
     var wrap = document.getElementById('db-content');
     if (!wrap) return;
@@ -1477,10 +1868,15 @@ function renderDbList() {
     var lessons = getLessons(currentSubject, currentTopic);
     var lessonNames = Object.keys(lessons);
     var scopeNote = currentLesson ? ' › '+currentLesson : ' (all lessons)';
+    var curType = currentLesson ? getLessonType(currentSubject, currentTopic, currentLesson) : null;
 
     var html = '';
     html += '<h3 class="db-sec-title">Import Data</h3>';
-    html += '<textarea id="json-input" placeholder="##Lesson 1&#10;What is gravity? -!- Force that attracts objects&#10;What is speed? -!- Distance over time&#10;&#10;##Lesson 2&#10;What is mass? -!- Amount of matter"></textarea>';
+    var placeholder = curType === 'mcq'
+        ? "##"+currentLesson+"\nWhat is the capital of France? -!- London -!- Paris -!- Berlin -!- Madrid -!- Paris\nWhich planet is closest to the Sun? -!- Venus -!- Earth -!- Mercury -!- Mars -!- Mercury"
+        : "##Lesson 1\nWhat is gravity? -!- Force that attracts objects\nWhat is speed? -!- Distance over time\n\n##Lesson 2\nWhat is mass? -!- Amount of matter";
+    html += '<textarea id="json-input" placeholder="'+escAttr(placeholder)+'"></textarea>';
+    html += '<div class="db-sub">Flashcards: <strong style="color:var(--dim);">Question -!- Answer</strong> &nbsp;·&nbsp; MCQ: <strong style="color:var(--dim);">Question -!- Option 1 -!- Option 2 -!- Option 3 -!- Option 4 -!- Correct Answer</strong> (must match one option exactly, auto-detected by 5 separators)</div>';
     html += '<input id="file-input" type="file" accept=".json" style="display:none" onchange="importJsonFile(event)">';
     html += '<div class="db-btn-group">';
     html += '<button class="btn btn-primary" onclick="importData()">Import</button>';
@@ -1490,12 +1886,12 @@ function renderDbList() {
     // Per-lesson cards
     if (currentLesson) {
         var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
-        html += '<div class="db-list-head"><h3>'+escHtml(currentLesson)+' Cards ('+cards.length+')</h3>';
+        html += '<div class="db-list-head"><h3>'+escHtml(currentLesson)+(curType==='mcq'?'<span class="tag-mcq">MCQ</span>':'')+' Cards ('+cards.length+')</h3>';
         html += '<button class="btn" onclick="clearAllCards()" style="padding:8px 16px;font-size:.75rem;">Clear Lesson</button></div>';
         html += '<div id="db-list">';
         cards.forEach(function(c,i) {
             html += '<div class="db-item" id="db-item-'+i+'">';
-            html += '<div class="db-item-content"><div class="db-key">'+escHtml(c.q)+'</div><div class="db-val">'+escHtml(c.a)+'</div></div>';
+            html += dbCardContentHtml(c);
             html += '<div class="db-item-actions">';
             html += '<button class="btn db-btn-edit" style="padding:6px 12px;font-size:.75rem;" onclick="editCard('+i+')">✏️</button>';
             html += '<button class="btn db-btn-delete" style="padding:6px 12px;font-size:.75rem;" onclick="deleteCard('+i+')">Del</button>';
@@ -1507,14 +1903,15 @@ function renderDbList() {
         html += '<div class="db-list-head"><h3>All Lessons</h3></div>';
         lessonNames.forEach(function(ln) {
             var cards = lessons[ln];
+            var lt = getLessonType(currentSubject, currentTopic, ln);
             html += '<div style="margin-bottom:24px;">';
-            html += '<div class="db-lesson-badge">'+escHtml(ln)+' · '+cards.length+' cards</div>';
+            html += '<div class="db-lesson-badge">'+escHtml(ln)+' · '+cards.length+' cards'+(lt==='mcq'?' · MCQ':'')+'</div>';
             if (cards.length === 0) {
                 html += '<div style="color:var(--dimmer);font-size:.85rem;padding:8px 0;">No cards yet</div>';
             }
             cards.forEach(function(c,i){
                 html += '<div class="db-item">';
-                html += '<div class="db-item-content"><div class="db-key">'+escHtml(c.q)+'</div><div class="db-val">'+escHtml(c.a)+'</div></div>';
+                html += dbCardContentHtml(c);
                 html += '<div class="db-item-actions">';
                 html += '<button class="btn db-btn-delete" style="padding:6px 12px;font-size:.75rem;" onclick="deleteCardFromLesson(\''+escAttr(ln)+'\','+i+')">Del</button>';
                 html += '</div></div>';
@@ -1537,7 +1934,8 @@ function renderDbList() {
 // ── IMPORT ──────────────────────────────────────────────────────────────
 function parseBlockFormat(text) {
     // ##Lesson Name\nQ -!- A\nQ -!- A\n\n##Lesson 2\n...
-    var result = {}; // lessonName -> [{q,a}]
+    // MCQ line (auto-detected, exactly 6 segments): Q -!- Opt1 -!- Opt2 -!- Opt3 -!- Opt4 -!- CorrectAnswer
+    var result = {}; // lessonName -> [{q,a} or {q,a,type:'mcq',options,correct}]
     var currentLessonName = null;
     var lines = text.split('\n');
     lines.forEach(function(line) {
@@ -1545,20 +1943,24 @@ function parseBlockFormat(text) {
         if (trimmed.startsWith('##')) {
             currentLessonName = trimmed.slice(2).trim();
             if (!result[currentLessonName]) result[currentLessonName] = [];
-        } else if (trimmed.includes('-!-') && currentLessonName) {
-            var parts = trimmed.split('-!-');
-            if (parts.length>=2) {
-                var q=parts[0].trim(), a=parts.slice(1).join('-!-').trim();
-                if (q&&a) result[currentLessonName].push({q,a});
+            return;
+        }
+        if (!trimmed.includes('-!-')) return;
+        var target = currentLessonName || 'Lesson 1';
+        if (!result[target]) result[target] = [];
+        var rawParts = trimmed.split('-!-');
+        if (rawParts.length === 6) {
+            var mq = rawParts[0].trim();
+            var opts = rawParts.slice(1,5).map(function(p){ return p.trim(); });
+            var correct = rawParts[5].trim();
+            if (mq && correct && opts.every(function(o){ return o; })) {
+                result[target].push({ q:mq, a:correct, type:'mcq', options:opts, correct:correct });
+                return;
             }
-        } else if (trimmed.includes('-!-') && !currentLessonName) {
-            // No lesson header yet — use default
-            if (!result['Lesson 1']) result['Lesson 1'] = [];
-            var parts2 = trimmed.split('-!-');
-            if (parts2.length>=2) {
-                var q2=parts2[0].trim(), a2=parts2.slice(1).join('-!-').trim();
-                if (q2&&a2) result['Lesson 1'].push({q:q2,a:a2});
-            }
+        }
+        if (rawParts.length>=2) {
+            var q=rawParts[0].trim(), a=rawParts.slice(1).join('-!-').trim();
+            if (q&&a) result[target].push({q,a});
         }
     });
     return result;
@@ -1570,15 +1972,16 @@ function importData() {
     if (!raw){ alert('Enter some data first.'); return; }
 
     var lessonMap = null;
+    var lessonTypeMap = {};
 
     // Try JSON first
     if (raw.trim().startsWith('[')) {
         try {
             var parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed[0] && parsed[0].name && parsed[0].cards) {
-                // [{name, cards:[{q,a}]}]
+                // [{name, cards:[{q,a}], type?:'mcq'|'flashcard'}]
                 lessonMap = {};
-                parsed.forEach(function(l){ lessonMap[l.name] = l.cards||[]; });
+                parsed.forEach(function(l){ lessonMap[l.name] = l.cards||[]; if (l.type) lessonTypeMap[l.name]=l.type; });
             } else if (Array.isArray(parsed) && parsed[0] && parsed[0].q) {
                 // Old flat format [{q,a}] → add to current lesson or Lesson 1
                 var target = currentLesson || 'Lesson 1';
@@ -1613,6 +2016,10 @@ function importData() {
             if (existing.some(function(e){ return e.q.trim().toLowerCase()===c.q.trim().toLowerCase(); })) totalDupes++;
             else { existing.push(c); totalAdded++; }
         });
+        if (lessonTypeMap[ln]) setLessonType(currentSubject, currentTopic, ln, lessonTypeMap[ln]);
+        else if (lessonMap[ln].some(function(c){ return c.type==='mcq'; }) && getLessonType(currentSubject,currentTopic,ln)==='flashcard' && existing.every(function(c){ return c.type==='mcq'; })) {
+            setLessonType(currentSubject, currentTopic, ln, 'mcq');
+        }
     }
 
     ensureSRS(); saveData(); renderSidebar(); updateHomeStats(); renderHomeSubjects();
@@ -1659,6 +2066,7 @@ function editCard(idx) {
     if (!currentLesson) return;
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var card = cards[idx];
+    if (card.type === 'mcq') { alert('MCQ cards can\'t be edited inline yet — delete and re-import the line instead.'); return; }
     var newQ = prompt('Edit Question:', card.q);
     if (newQ===null) return;
     var newA = prompt('Edit Answer:', card.a);
@@ -1695,7 +2103,7 @@ function clearAllCards() {
 function exportTopicJson() {
     if (!currentSubject||!currentTopic){ alert('Select a Topic first.'); return; }
     var lessons = getLessons(currentSubject, currentTopic);
-    var data = Object.keys(lessons).map(function(ln){ return {name:ln,cards:lessons[ln]}; });
+    var data = Object.keys(lessons).map(function(ln){ return {name:ln,type:getLessonType(currentSubject,currentTopic,ln),cards:lessons[ln]}; });
     var a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     a.download=safeId(currentSubject)+'-'+safeId(currentTopic)+'.json';
@@ -1713,7 +2121,189 @@ function switchTab(name, el) {
     else if (name==='flashcard') renderCard();
 }
 
-// ── HOME ───────────────────────────────────────────────────────────────
+// ── HOME / DAILY MASTERY ENGINE ───────────────────────────────────────
+var PLAN_TIERS = [
+    { key:'due',      rank:'1', title:'Review Now',      desc:'SRS overdue — highest priority' },
+    { key:'new',      rank:'2', title:'Start New',       desc:'Never studied — begin today' },
+    { key:'weak',     rank:'3', title:'Weak Spots',      desc:'Under 40% mastered' },
+    { key:'build',    rank:'4', title:'Keep Building',   desc:'40–89% mastered' },
+    { key:'maintain', rank:'5', title:'Refresh',         desc:'Stale review to lock in memory' }
+];
+
+function analyzeAllLessons() {
+    var rows = [];
+    for (var subj in cardContent) {
+        for (var topic in cardContent[subj]) {
+            var lessons = getLessons(subj, topic);
+            for (var ln in lessons) {
+                var cards = lessons[ln];
+                if (!cards.length) continue;
+                var srs = getLessonSRS(subj, topic, ln);
+                var due = srs.filter(isDue).length;
+                var mastered = srs.filter(function(s){ return s.interval >= 7; }).length;
+                var reviewed = srs.filter(function(s){ return s.lastReviewed; }).length;
+                var masteryPct = cards.length ? Math.round(mastered / cards.length * 100) : 0;
+                var reviewedPct = cards.length ? Math.round(reviewed / cards.length * 100) : 0;
+                var lastStudied = null;
+                srs.forEach(function(s) {
+                    if (s.lastReviewed && (!lastStudied || s.lastReviewed > lastStudied))
+                        lastStudied = s.lastReviewed;
+                });
+                var staleDays = lastStudied ? Math.floor((Date.now() - lastStudied) / 86400000) : 999;
+                var row = {
+                    subj:subj, topic:topic, lesson:ln,
+                    total:cards.length, due:due, mastered:mastered,
+                    reviewed:reviewed, notStarted:cards.length - reviewed,
+                    masteryPct:masteryPct, reviewedPct:reviewedPct,
+                    lastStudied:lastStudied, staleDays:staleDays,
+                    lessonType:getLessonType(subj, topic, ln)
+                };
+                row.tier = classifyLessonTier(row);
+                row.priority = computeLessonPriority(row);
+                row.cardsToday = recommendCardsToday(row);
+                row.action = getLessonAction(row);
+                rows.push(row);
+            }
+        }
+    }
+    return rows;
+}
+
+function classifyLessonTier(r) {
+    if (r.due > 0) return 'due';
+    if (r.reviewedPct === 0) return 'new';
+    if (r.masteryPct < 40) return 'weak';
+    if (r.masteryPct < 90) return 'build';
+    if (r.staleDays > 14) return 'maintain';
+    if (r.masteryPct >= 90) return 'mastered';
+    return 'build';
+}
+
+function computeLessonPriority(r) {
+    var p = 0;
+    if (r.due > 0) p += 1000 + r.due * 10;
+    if (r.reviewedPct === 0) p += 500 + Math.min(r.total, 30);
+    if (r.masteryPct < 40) p += 300 - r.masteryPct * 2;
+    else if (r.masteryPct < 70) p += 150 - r.masteryPct;
+    if (r.staleDays > 7 && r.masteryPct < 90) p += Math.min(r.staleDays, 30);
+    if (r.masteryPct >= 90 && r.due === 0) p -= 500;
+    return p;
+}
+
+function recommendCardsToday(r) {
+    if (r.due > 0) return Math.min(r.due, 20);
+    if (r.reviewedPct === 0) return Math.min(r.total, 15);
+    if (r.masteryPct < 90) return Math.min(Math.max(r.total - r.mastered, 1), 15);
+    if (r.staleDays > 14) return Math.min(10, r.total);
+    return 0;
+}
+
+function getLessonAction(r) {
+    if (r.due > 0) return 'Review ' + r.due + ' due card' + (r.due !== 1 ? 's' : '');
+    if (r.reviewedPct === 0) return 'Start lesson · study ' + Math.min(r.total, 15) + ' cards';
+    if (r.masteryPct < 40) return 'Strengthen weak spot · ' + r.masteryPct + '% mastered';
+    if (r.masteryPct < 90) return 'Push to mastery · ' + r.masteryPct + '% done';
+    if (r.staleDays > 14) return 'Refresh memory · last studied ' + r.staleDays + 'd ago';
+    return 'On track · ' + r.masteryPct + '% mastered';
+}
+
+function buildDailyMasteryPlan() {
+    return analyzeAllLessons()
+        .filter(function(r){ return r.tier !== 'mastered'; })
+        .sort(function(a,b){ return b.priority - a.priority; });
+}
+
+function allocateDailyCards(plan) {
+    var quota = getDailyQuota();
+    var remaining = quota;
+    var allocated = 0;
+    var backlog = 0;
+    var todayCount = 0;
+    var result = plan.map(function(r) {
+        var want = r.cardsToday;
+        var alloc = Math.min(want, remaining);
+        remaining -= alloc;
+        allocated += alloc;
+        backlog += Math.max(want - alloc, 0);
+        if (alloc > 0) todayCount++;
+        return {
+            subj:r.subj, topic:r.topic, lesson:r.lesson,
+            total:r.total, due:r.due, mastered:r.mastered,
+            reviewed:r.reviewed, notStarted:r.notStarted,
+            masteryPct:r.masteryPct, reviewedPct:r.reviewedPct,
+            lastStudied:r.lastStudied, staleDays:r.staleDays,
+            tier:r.tier, priority:r.priority,
+            cardsWant:want, cardsToday:alloc, inTodayPlan:alloc > 0,
+            action:getLessonActionToday(r, alloc, want)
+        };
+    });
+    return { plan:result, quota:quota, allocated:allocated, backlog:backlog, todayCount:todayCount };
+}
+
+function getLessonActionToday(r, alloc, want) {
+    if (alloc > 0) {
+        if (r.due > 0) return 'Review ' + alloc + ' of ' + r.due + ' due today';
+        if (r.reviewedPct === 0) return 'Start · ' + alloc + ' card' + (alloc !== 1 ? 's' : '') + ' today';
+        if (r.masteryPct < 40) return 'Strengthen · ' + alloc + ' cards (' + r.masteryPct + '% mastered)';
+        if (r.masteryPct < 90) return 'Build · ' + alloc + ' cards (' + r.masteryPct + '% done)';
+        return 'Refresh · ' + alloc + ' cards today';
+    }
+    if (want > 0) return 'Queued · ' + want + ' card' + (want !== 1 ? 's' : '') + ' after today\'s quota';
+    return 'On track';
+}
+
+function getLibraryStats() {
+    var lessons = analyzeAllLessons();
+    var subjectCount = Object.keys(cardContent).length;
+    var topicCount = 0, lessonCount = lessons.length, cardCount = 0, masteredCount = 0, totalDue = 0;
+    var subjects = Object.keys(cardContent);
+    subjects.forEach(function(subj) {
+        topicCount += Object.keys(cardContent[subj]).length;
+    });
+    lessons.forEach(function(l) {
+        cardCount += l.total;
+        masteredCount += l.mastered;
+        totalDue += l.due;
+    });
+    var masteryPct = cardCount ? Math.round(masteredCount / cardCount * 100) : 0;
+    var needWork = lessons.filter(function(l){ return l.tier !== 'mastered'; }).length;
+    var rawBacklog = lessons.filter(function(l){ return l.tier !== 'mastered'; })
+        .reduce(function(s,l){ return s + l.cardsToday; }, 0);
+    var alloc = allocateDailyCards(buildDailyMasteryPlan());
+    var doneToday = dailyLog[dayKey(0)] || 0;
+    return {
+        subjectCount:subjectCount, topicCount:topicCount,
+        lessonCount:lessonCount, cardCount:cardCount,
+        masteredCount:masteredCount, masteryPct:masteryPct,
+        totalDue:totalDue, needWork:needWork,
+        goalCards:alloc.quota, allocatedToday:alloc.allocated,
+        backlogCards:alloc.backlog, rawBacklog:rawBacklog,
+        todayLessonCount:alloc.todayCount, doneToday:doneToday,
+        dailyPlan:alloc.plan
+    };
+}
+
+function computeLongestStreak() {
+    var keys = Object.keys(dailyLog).filter(function(k){ return meetsDailyQuota(dailyLog[k]); }).sort();
+    if (!keys.length) return 0;
+    var best = 1, cur = 1;
+    for (var i = 1; i < keys.length; i++) {
+        var prev = parseDayKey(keys[i - 1]);
+        var curr = parseDayKey(keys[i]);
+        var diff = Math.round((curr - prev) / 86400000);
+        if (diff === 1) { cur++; best = Math.max(best, cur); }
+        else cur = 1;
+    }
+    return best;
+}
+
+function formatHeroDate() {
+    var d = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate();
+}
+
 function switchToHome() {
     currentSubject=null; currentTopic=null; currentLesson=null;
     document.getElementById('header-title').textContent='Home';
@@ -1722,47 +2312,343 @@ function switchToHome() {
     document.querySelectorAll('.tab-view').forEach(function(t){ t.classList.remove('active'); });
     document.querySelectorAll('#main-nav .nav-item').forEach(function(n){ n.classList.remove('active'); });
     document.getElementById('tab-home').classList.add('active');
-    updateHomeStats(); renderHomeSubjects();
+    updateHomeStats();
+    var gs = document.getElementById('getting-started-section');
+    if (gs) gs.style.display = Object.keys(cardContent).length ? 'none' : 'flex';
     var sb = document.getElementById('sidebar');
     if (sb.classList.contains('open')) toggleSidebar();
 }
+
 function updateHomeStats() {
-    var subjects=Object.keys(cardContent);
-    var subjectCount=subjects.length, topicCount=0, lessonCount=0, cardCount=0;
-    subjects.forEach(function(subj){
-        Object.keys(cardContent[subj]).forEach(function(topic){
-            topicCount++;
-            var lessons=getLessons(subj,topic);
-            for (var ln in lessons){ lessonCount++; cardCount+=lessons[ln].length; }
-        });
-    });
-    document.getElementById('home-stat-total-subjects').textContent=subjectCount;
-    document.getElementById('home-stat-total-topics').textContent=topicCount;
-    document.getElementById('home-stat-total-lessons').textContent=lessonCount;
-    document.getElementById('home-stat-total-cards').textContent=cardCount;
+    renderHero();
+    renderDailyPlan();
+    renderHomeSubjects();
 }
+
+function renderHero() {
+    var stats = getLibraryStats();
+    var plan = stats.dailyPlan.filter(function(r){ return r.inTodayPlan; });
+    var streak = computeStreak();
+    var best = computeLongestStreak();
+    var quota = getDailyQuota();
+
+    var dateEl = document.getElementById('hero-date');
+    if (dateEl) dateEl.textContent = formatHeroDate();
+
+    var streakNum = document.getElementById('hero-streak-num');
+    if (streakNum) streakNum.textContent = streak;
+
+    var streakBest = document.getElementById('hero-streak-best');
+    if (streakBest) streakBest.textContent = best > 0 ? 'Best: ' + best + 'd (quota met)' : '';
+
+    var mission = document.getElementById('hero-mission');
+    if (mission) {
+        if (!stats.lessonCount) {
+            mission.innerHTML = 'No lessons yet. <strong>Create a subject</strong>, add topics and cards, then MonoFlash will build your daily mastery route.';
+        } else if (!stats.dailyPlan.length && stats.masteryPct >= 90) {
+            mission.innerHTML = '<strong>Library mastered.</strong> All lessons are on track — hit your <strong>' + quota + '-card</strong> daily quota to keep the streak alive.';
+        } else if (stats.totalDue > 0) {
+            mission.innerHTML = '<strong>' + stats.allocatedToday + ' cards today</strong> (cap ' + quota + ') across <strong>' + stats.todayLessonCount + ' lesson' + (stats.todayLessonCount !== 1 ? 's' : '') + '</strong>. ' + stats.totalDue + ' due in library — top priorities first.';
+        } else {
+            mission.innerHTML = 'SRS is clear. Study <strong>' + stats.allocatedToday + ' cards today</strong> across <strong>' + stats.todayLessonCount + ' lesson' + (stats.todayLessonCount !== 1 ? 's' : '') + '</strong> to keep mastering every subject.';
+        }
+        if (stats.backlogCards > 0) {
+            mission.innerHTML += ' <span style="color:var(--dimmer);">(' + stats.backlogCards + ' more queued for later days.)</span>';
+        }
+    }
+
+    var statsWrap = document.getElementById('hero-stats');
+    if (statsWrap) {
+        statsWrap.innerHTML =
+            '<div class="hero-stat"><div class="hero-stat-num'+(stats.totalDue?' accent':'')+'">'+stats.allocatedToday+'</div><div class="hero-stat-label">Today</div></div>' +
+            '<div class="hero-stat"><div class="hero-stat-num">'+stats.totalDue+'</div><div class="hero-stat-label">Due Total</div></div>' +
+            '<div class="hero-stat"><div class="hero-stat-num">'+stats.masteryPct+'%</div><div class="hero-stat-label">Library</div></div>' +
+            '<div class="hero-stat"><div class="hero-stat-num">'+stats.doneToday+'/'+quota+'</div><div class="hero-stat-label">Progress</div></div>';
+    }
+
+    var goalPct = Math.min(100, Math.round(stats.doneToday / quota * 100));
+    var fill = document.getElementById('hero-progress-fill');
+    var pctEl = document.getElementById('hero-progress-pct');
+    var sub = document.getElementById('hero-progress-sub');
+    if (fill) fill.style.width = goalPct + '%';
+    if (pctEl) pctEl.textContent = goalPct + '%';
+    if (sub) {
+        var subTxt = stats.doneToday + ' of ' + quota + ' daily quota';
+        if (stats.backlogCards > 0) subTxt += ' · ' + stats.backlogCards + ' cards queued for upcoming days';
+        else subTxt += ' · ' + stats.cardCount + ' cards in library';
+        sub.textContent = subTxt;
+    }
+
+    var startBtn = document.getElementById('hero-start-btn');
+    if (startBtn) {
+        if (!plan.length) {
+            startBtn.textContent = stats.lessonCount ? 'Quota Done' : '+ Create Subject';
+            if (stats.lessonCount) startBtn.setAttribute('disabled', 'disabled');
+            else startBtn.removeAttribute('disabled');
+        } else {
+            var label = plan[0].lesson;
+            if (label.length > 22) label = label.slice(0, 20) + '…';
+            startBtn.textContent = 'Start: ' + label;
+            startBtn.removeAttribute('disabled');
+        }
+    }
+
+    renderStudyCalendar(stats.doneToday);
+}
+
+var calViewYear = null, calViewMonth = null;
+
+function shiftCalendarMonth(delta) {
+    var today = new Date();
+    if (calViewYear === null) { calViewYear = today.getFullYear(); calViewMonth = today.getMonth(); }
+    var d = new Date(calViewYear, calViewMonth + delta, 1);
+    var ny = d.getFullYear(), nm = d.getMonth();
+    // Never allow navigating past the current month
+    if (ny > today.getFullYear() || (ny === today.getFullYear() && nm > today.getMonth())) return;
+    calViewYear = ny; calViewMonth = nm;
+    renderStudyCalendar(dailyLog[dayKey(0)] || 0);
+}
+
+function renderStudyCalendar(doneToday) {
+    var wrap = document.getElementById('study-calendar');
+    var todayLbl = document.getElementById('hero-calendar-today');
+    var quota = getDailyQuota();
+    if (todayLbl) {
+        if (doneToday >= quota) todayLbl.textContent = 'Quota met today (' + doneToday + ' cards)';
+        else if (doneToday > 0) todayLbl.textContent = doneToday + '/' + quota + ' cards · partial day';
+        else todayLbl.textContent = '0/' + quota + ' cards · quota not started';
+    }
+    if (!wrap) return;
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var todayK = dayKey(0);
+    if (calViewYear === null) { calViewYear = today.getFullYear(); calViewMonth = today.getMonth(); }
+    var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var dow = ['S','M','T','W','T','F','S'];
+
+    var year = calViewYear, month = calViewMonth;
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var startDow = new Date(year, month, 1).getDay();
+
+    var navLabel = document.getElementById('cal-nav-label');
+    if (navLabel) navLabel.textContent = monthNames[month] + ' ' + year;
+    var nextBtn = document.getElementById('cal-next-btn');
+    if (nextBtn) nextBtn.disabled = (year === today.getFullYear() && month === today.getMonth());
+
+    var daysStudied = 0, daysQuotaMet = 0, cardsThisMonth = 0, daysElapsed = 0;
+    var html = '<div class="cal-month">';
+    html += '<div class="cal-dow">';
+    dow.forEach(function(d){ html += '<span>' + d + '</span>'; });
+    html += '</div><div class="cal-days">';
+
+    for (var e = 0; e < startDow; e++) html += '<div class="cal-day empty"></div>';
+
+    for (var day = 1; day <= daysInMonth; day++) {
+        var dk = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+        var cellDate = new Date(year, month, day);
+        var isFuture = cellDate > today;
+        var count = dailyLog[dk] || 0;
+        var lvl = getActivityLevel(count);
+        if (!isFuture) {
+            daysElapsed++;
+            if (count > 0) { daysStudied++; cardsThisMonth += count; }
+            if (meetsDailyQuota(count)) daysQuotaMet++;
+        }
+        var tip = dk + ': ' + count + '/' + quota + ' cards' + (meetsDailyQuota(count) ? ' · quota met' : count > 0 ? ' · partial' : ' · no study');
+        html += '<div class="cal-day' + (lvl ? ' lvl' + lvl : '') + (dk === todayK ? ' today' : '') + (isFuture ? ' future' : '') + '" title="' + escAttr(tip) + '">';
+        html += '<span class="cal-day-num">' + day + '</span></div>';
+    }
+
+    html += '</div></div>';
+    wrap.innerHTML = html;
+
+    var summary = document.getElementById('cal-month-summary');
+    if (summary) {
+        if (!daysElapsed) {
+            summary.textContent = 'No days elapsed yet this month.';
+        } else {
+            summary.innerHTML = '<strong>' + daysStudied + '/' + daysElapsed + '</strong> days studied · <strong>' + daysQuotaMet + '</strong> quota-met · <strong>' + cardsThisMonth + '</strong> cards reviewed';
+        }
+    }
+}
+
+function renderDailyPlan() {
+    var wrap = document.getElementById('daily-plan-content');
+    var countEl = document.getElementById('plan-count');
+    var subEl = document.getElementById('plan-subtitle');
+    if (!wrap) return;
+
+    var stats = getLibraryStats();
+    var plan = stats.dailyPlan;
+    var todayPlan = plan.filter(function(r){ return r.inTodayPlan; });
+    var queued = plan.filter(function(r){ return !r.inTodayPlan && r.cardsWant > 0; });
+    var all = analyzeAllLessons();
+    var mastered = all.filter(function(r){ return r.tier === 'mastered'; });
+    var quota = getDailyQuota();
+
+    if (countEl) countEl.textContent = todayPlan.length + ' today · ' + quota + ' card cap';
+    if (subEl) {
+        if (!plan.length) {
+            subEl.textContent = 'Every lesson is on track. Refresh or add new cards to keep growing.';
+        } else {
+            subEl.textContent = todayPlan.length + ' lesson' + (todayPlan.length !== 1 ? 's' : '') + ' fit today\'s ' + quota + '-card quota' +
+                (queued.length ? ' · ' + queued.length + ' more queued after' : '');
+        }
+    }
+
+    if (!all.length) {
+        wrap.innerHTML = '<div class="plan-empty">Add subjects, topics, and lessons to generate your personalized daily mastery plan.</div>';
+        return;
+    }
+
+    if (!plan.length) {
+        wrap.innerHTML = '<div class="plan-empty"><strong>Full mastery reached.</strong> Every lesson is 90%+ mastered with nothing due. Hit ' + quota + ' cards/day to keep your streak.</div>';
+        if (mastered.length) wrap.innerHTML += renderMasteredBlock(mastered);
+        return;
+    }
+
+    var html = '';
+    var shown = 0;
+
+    if (todayPlan.length) {
+        html += '<div class="plan-tier"><div class="plan-tier-head"><span class="plan-tier-rank">★</span><span class="plan-tier-title">Today\'s ' + stats.allocatedToday + ' Cards</span><span class="plan-tier-desc">Human daily cap</span></div>';
+        PLAN_TIERS.forEach(function(tier) {
+            var group = todayPlan.filter(function(r){ return r.tier === tier.key; });
+            if (!group.length) return;
+            group.forEach(function(r) {
+                shown++;
+                html += renderPlanRow(r, shown, false);
+            });
+        });
+        html += '</div>';
+    }
+
+    if (queued.length) {
+        html += '<div class="plan-tier"><div class="plan-tier-head"><span class="plan-tier-rank dim">…</span><span class="plan-tier-title">Queued Next</span><span class="plan-tier-desc">' + stats.backlogCards + ' cards after today</span></div>';
+        queued.slice(0, 12).forEach(function(r) {
+            shown++;
+            html += renderPlanRow(r, shown, true);
+        });
+        if (queued.length > 12) {
+            html += '<div class="plan-queue-note">+' + (queued.length - 12) + ' more lessons waiting — finish today\'s quota first, they\'ll surface tomorrow.</div>';
+        }
+        html += '</div>';
+    }
+
+    if (mastered.length) html += renderMasteredBlock(mastered);
+    wrap.innerHTML = html;
+}
+
+function renderPlanRow(r, num, isQueued) {
+    var html = '<div class="plan-row" onclick="goToLessonFromHome(\'' + escAttr(r.subj) + '\',\'' + escAttr(r.topic) + '\',\'' + escAttr(r.lesson) + '\')">';
+    html += '<span class="plan-row-num">' + num + '</span>';
+    html += '<div class="plan-row-main">';
+    html += '<div class="plan-row-name">' + escHtml(r.subj) + ' &nbsp;\u203a&nbsp; ' + escHtml(r.lesson) + (r.lessonType==='mcq'?'<span class="tag-mcq">MCQ</span>':'') + '</div>';
+    html += '<div class="plan-row-path">' + escHtml(r.topic) + '</div>';
+    html += '<div class="plan-row-action">' + escHtml(r.action) + '</div>';
+    html += '</div><div class="plan-row-right">';
+    if (isQueued) {
+        html += '<div class="plan-row-badge queue">' + r.cardsWant + ' queued</div>';
+    } else {
+        html += '<div class="plan-row-badge">' + r.cardsToday + ' today</div>';
+    }
+    html += '<div class="plan-row-mastery">' + r.masteryPct + '%</div>';
+    html += '<div class="plan-row-bar"><div class="plan-row-bar-fill" style="width:' + r.masteryPct + '%"></div></div>';
+    html += '</div></div>';
+    return html;
+}
+
+function renderMasteredBlock(mastered) {
+    var html = '<div class="plan-mastered">';
+    html += '<div class="plan-mastered-head">On Track · ' + mastered.length + ' lesson' + (mastered.length !== 1 ? 's' : '') + '</div>';
+    html += '<div class="plan-mastered-tags">';
+    mastered.forEach(function(r) {
+        html += '<span class="plan-mastered-tag">' + escHtml(r.subj) + ' · ' + escHtml(r.lesson) + ' (' + r.masteryPct + '%)</span>';
+    });
+    html += '</div></div>';
+    return html;
+}
+
+function analyzeSubject(subj) {
+    var topics = cardContent[subj] || {};
+    var topicCount = Object.keys(topics).length;
+    var lessons = analyzeAllLessons().filter(function(l){ return l.subj === subj; });
+    var cardCount = 0, masteredCount = 0, dueCount = 0, needWork = 0, nextLesson = null;
+    lessons.forEach(function(l) {
+        cardCount += l.total;
+        masteredCount += l.mastered;
+        dueCount += l.due;
+        if (l.tier !== 'mastered') {
+            needWork++;
+            if (!nextLesson || l.priority > nextLesson.priority) nextLesson = l;
+        }
+    });
+    var masteryPct = cardCount ? Math.round(masteredCount / cardCount * 100) : 0;
+    var nextAction = nextLesson ? nextLesson.action : 'Fully mastered';
+    return {
+        subj:subj, topicCount:topicCount, lessonCount:lessons.length,
+        cardCount:cardCount, masteryPct:masteryPct, dueCount:dueCount,
+        needWork:needWork, nextLesson:nextLesson, nextAction:nextAction
+    };
+}
+
 function renderHomeSubjects() {
-    var list=document.getElementById('home-subjects-list');
-    var subjects=Object.keys(cardContent);
-    if (!subjects.length){ list.innerHTML='<div class="home-no-subjects">No subjects yet. Create one to begin!</div>'; return; }
-    list.innerHTML='';
-    subjects.forEach(function(subj){
-        var topics=cardContent[subj];
-        var topicCount=Object.keys(topics).length;
-        var cardCount=0;
-        Object.keys(topics).forEach(function(topic){ cardCount+=totalCardsInTopic(subj,topic); });
-        var item=document.createElement('div'); item.className='home-subject-item';
-        var nameDiv=document.createElement('div');
-        var name=document.createElement('div'); name.className='home-subject-name'; name.textContent=subj;
-        var count=document.createElement('div'); count.style.cssText='color:var(--dimmer);font-size:.8rem;margin-top:2px;';
-        count.textContent=topicCount+' topic'+(topicCount!==1?'s':'')+' · '+cardCount+' card'+(cardCount!==1?'s':'');
-        nameDiv.appendChild(name); nameDiv.appendChild(count);
-        var badge=document.createElement('div'); badge.className='home-subject-count'; badge.textContent=cardCount;
-        item.appendChild(nameDiv); item.appendChild(badge);
-        item.onclick=(function(s){ return function(){ toggleSubject(s); }; })(subj);
+    var list = document.getElementById('home-subjects-list');
+    var countEl = document.getElementById('subject-map-count');
+    var subjects = Object.keys(cardContent);
+    if (!list) return;
+    if (!subjects.length) {
+        list.innerHTML = '<div class="home-no-subjects">No subjects yet. Tap <strong>+ Quick Start</strong> in the hero to begin.</div>';
+        if (countEl) countEl.textContent = '0 subjects';
+        return;
+    }
+    if (countEl) countEl.textContent = subjects.length + ' subject' + (subjects.length !== 1 ? 's' : '');
+    list.innerHTML = '';
+    subjects.forEach(function(subj) {
+        var info = analyzeSubject(subj);
+        var item = document.createElement('div');
+        item.className = 'home-subject-item';
+        item.innerHTML =
+            '<div class="home-subject-top">' +
+                '<div><div class="home-subject-name">' + escHtml(subj) + '</div>' +
+                '<div class="home-subject-meta">' + info.topicCount + ' topic' + (info.topicCount !== 1 ? 's' : '') +
+                ' · ' + info.lessonCount + ' lesson' + (info.lessonCount !== 1 ? 's' : '') +
+                ' · ' + info.masteryPct + '% mastered</div></div>' +
+                '<div class="home-subject-count' + (info.dueCount ? ' hot' : '') + '">' +
+                (info.dueCount ? info.dueCount + ' due' : info.needWork ? info.needWork + ' to go' : 'done') +
+                '</div>' +
+            '</div>' +
+            '<div class="home-subject-bar"><div class="home-subject-bar-fill" style="width:' + info.masteryPct + '%"></div></div>' +
+            '<div class="home-subject-meta" style="margin-top:6px;">Next: ' + escHtml(info.nextAction) + '</div>';
+        item.onclick = (function(s, nl) {
+            return function() {
+                var sb = document.getElementById('sidebar');
+                if (!sb.classList.contains('open')) toggleSidebar();
+                toggleSubject(s);
+                if (nl) goToLessonFromHome(nl.subj, nl.topic, nl.lesson);
+            };
+        })(subj, info.nextLesson);
         list.appendChild(item);
     });
 }
+
+function goToLessonFromHome(subj, topic, lessonName) {
+    currentSubject = subj; currentTopic = topic;
+    ensureSRS();
+    loadLesson(lessonName);
+}
+
+function startDailyPlan() {
+    var stats = getLibraryStats();
+    var plan = stats.dailyPlan.filter(function(r){ return r.inTodayPlan; });
+    if (!plan.length) {
+        if (!Object.keys(cardContent).length) createQuickStart();
+        return;
+    }
+    goToLessonFromHome(plan[0].subj, plan[0].topic, plan[0].lesson);
+}
+
 function createQuickStart() {
     var name=prompt('Subject name (e.g., Biology):');
     if (!name||!name.trim()) return;
@@ -2100,11 +2986,18 @@ document.addEventListener('keydown', function(e) {
     var tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
+    // Lesson create modal: Escape closes it, swallow everything else here
+    var lcModal = document.getElementById('lesson-create-modal');
+    if (lcModal && lcModal.classList.contains('show')) {
+        if (e.code === 'Escape') { e.preventDefault(); closeLessonCreateModal(); }
+        return;
+    }
+
     // / = go back to previous card or toggle sidebar
     if (e.code === 'Slash' && !e.shiftKey) {
         e.preventDefault();
-        var tab = document.querySelector('.tab-view.active');
-        if (tab && tab.id === 'tab-flashcard') {
+        var tab0 = document.querySelector('.tab-view.active');
+        if (tab0 && tab0.id === 'tab-flashcard') {
             previousCard();
         } else {
             toggleSidebar();
@@ -2114,6 +3007,21 @@ document.addEventListener('keydown', function(e) {
 
     var tab = document.querySelector('.tab-view.active');
     if (!tab || tab.id !== 'tab-flashcard') return;
+
+    var curCard = shuffledCards[cardIndex];
+    if (curCard && curCard.type === 'mcq') {
+        if (['Digit1','Digit2','Digit3','Digit4'].indexOf(e.code) > -1) {
+            e.preventDefault();
+            var idx = parseInt(e.code.slice(-1), 10) - 1;
+            var btn = document.querySelectorAll('#mcq-options-wrap .mcq-option')[idx];
+            if (btn && !btn.disabled) btn.click();
+        } else if (e.code === 'KeyB') {
+            e.preventDefault(); var fakeEv2={stopPropagation:function(){}}; toggleBookmark(fakeEv2);
+        } else if (e.code === 'Comma'  && e.shiftKey) { e.preventDefault(); shiftSet(-1); }
+        else if (e.code === 'Period' && e.shiftKey) { e.preventDefault(); shiftSet(1); }
+        else if (e.code === 'Escape') { e.preventDefault(); goBackToLessons(); }
+        return;
+    }
 
     if (e.code === 'Space' || e.code === 'Enter')  { e.preventDefault(); flipCard(); }
     else if (e.code === 'KeyW' || e.code === 'ArrowUp')       { e.preventDefault(); flipCard(); }       // W or ↑ = flip
