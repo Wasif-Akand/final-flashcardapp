@@ -229,6 +229,10 @@
         .cont-btn.bookmarks{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);color:#ffd700;}
         .cont-btn.bookmarks:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);}
         .cont-btn.bookmarks.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;}
+        .cont-btn.weak{background:rgba(243,156,18,.08);border-color:rgba(243,156,18,.3);color:#f39c12;}
+        .cont-btn.weak:hover{background:rgba(243,156,18,.15);border-color:rgba(243,156,18,.5);}
+        .cont-btn.weak.active{background:rgba(243,156,18,.2);border-color:#f39c12;color:#f39c12;}
+        .weak-badge{display:none;font-size:.62rem;font-weight:700;letter-spacing:.3px;color:#f39c12;background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.3);padding:2px 8px;border-radius:999px;margin:3px 0;width:fit-content;}
         .cont-info{font-size:.68rem;color:var(--dimmer);margin-top:8px;width:100%;text-align:center;}
 
         /* STATS */
@@ -840,6 +844,7 @@
                 </svg>
                 <div class="card-progress-info">
                     <div class="card-progress-label" id="timer-card-label">Card 1 of 0</div>
+                    <div class="weak-badge" id="weak-badge" style="display:none;"></div>
                     <div class="card-progress-bar-wrap">
                         <div class="card-progress-bar-fill" id="timer-card-bar" style="width:0%"></div>
                     </div>
@@ -969,13 +974,35 @@ function setDot(state) { dotEl.className='dot '+state; if(state==='syncing') pri
 function setRing(pct) { pringFill.style.strokeDashoffset = CIRC*(1-pct/100); }
 
 // ── DATA ───────────────────────────────────────────────────────────────
-var cardContent = JSON.parse(localStorage.getItem('monoFlashCardContent') || '{}');
-var srsData     = JSON.parse(localStorage.getItem('monoFlashSRSData')     || '{}');
-var bookmarks   = JSON.parse(localStorage.getItem('monoFlashBookmarks')   || '{}');
-var dailyLog    = JSON.parse(localStorage.getItem('monoFlashDailyLog')    || '{}');
+// All local data (cards, SRS, bookmarks, daily streak log) is namespaced
+// per Sync/Device ID, so switching IDs on this device gives a fully
+// separate local copy instead of sharing one cache across IDs.
+function idKey(base) { return base + '_' + DEVICE_ID; }
+function loadIdScoped(base, fallback) {
+    var raw = localStorage.getItem(idKey(base));
+    if (raw) return JSON.parse(raw);
+    // One-time bootstrap migration for pre-existing installs: whichever ID
+    // happens to load first after this update claims the old shared key,
+    // then it's deleted — so any *other* ID switched to later starts with
+    // a clean, separate copy instead of also inheriting the old one.
+    var legacy = localStorage.getItem(base);
+    if (legacy) {
+        localStorage.removeItem(base);
+        localStorage.setItem(idKey(base), legacy);
+        return JSON.parse(legacy);
+    }
+    return fallback;
+}
+var cardContent = loadIdScoped('monoFlashCardContent', {});
+var srsData     = loadIdScoped('monoFlashSRSData', {});
+var bookmarks   = loadIdScoped('monoFlashBookmarks', {});
 
 // ── DAILY ACTIVITY LOG (calendar + streak) ─────────────────────────────
 var DAILY_CARD_QUOTA = 40;
+
+function dailyLogKey() { return idKey('monoFlashDailyLog'); }
+function loadDailyLog() { return loadIdScoped('monoFlashDailyLog', {}); }
+var dailyLog = loadDailyLog();
 
 function getDailyQuota() { return DAILY_CARD_QUOTA; }
 
@@ -992,7 +1019,7 @@ function parseDayKey(k) {
 function logReview() {
     var k = dayKey(0);
     dailyLog[k] = (dailyLog[k]||0) + 1;
-    try { localStorage.setItem('monoFlashDailyLog', JSON.stringify(dailyLog)); } catch(e) {}
+    try { localStorage.setItem(dailyLogKey(), JSON.stringify(dailyLog)); } catch(e) {}
 }
 function meetsDailyQuota(count) { return (count || 0) >= getDailyQuota(); }
 function getActivityLevel(count) {
@@ -1046,7 +1073,7 @@ var currentSubject = null, currentTopic = null, currentLesson = null;
 var cardIndex = 0, sessionStats = {total:0,correct:0};
 var shuffledCards = [], dueCards = [];
 var CARDS_PER_CONTAINER = 20;
-var currentContainer = 'all', reviewMissedMode = false, reviewBookmarksMode = false;
+var currentContainer = 'all', reviewMissedMode = false, reviewBookmarksMode = false, reviewWeakMode = false;
 var missedCardsThisSession = new Set();
 
 // ── DATA HELPERS ───────────────────────────────────────────────────────
@@ -1135,19 +1162,44 @@ function totalLessonsInTopic(subj, topic) {
 }
 
 // ── SRS ────────────────────────────────────────────────────────────────
-function createSRS() { return {interval:0,easiness:2.5,repetitions:0,nextReview:Date.now(),lastReviewed:null}; }
+function createSRS() { return {interval:0,easiness:2.5,repetitions:0,nextReview:Date.now(),lastReviewed:null,correctCount:0,wrongCount:0}; }
 function updateSRS(s, q) {
     s.lastReviewed = Date.now();
-    if (q === 0) { s.repetitions=0; s.interval=1; }
+    if (q === 0) { s.repetitions=0; s.interval=1; s.wrongCount=(s.wrongCount||0)+1; }
     else {
         s.repetitions++;
         s.interval = s.repetitions===1 ? 1 : s.repetitions===2 ? 6 : Math.round(s.interval*s.easiness);
         s.easiness = Math.max(1.3, s.easiness+0.1-(1-q)*0.2);
+        s.correctCount=(s.correctCount||0)+1;
     }
     s.nextReview = Date.now() + s.interval*86400000;
     return s;
 }
 function isDue(s) { return !s || !s.nextReview || Date.now()>=s.nextReview; }
+// A card is "weak" once it's actually been attempted and either its lifetime
+// accuracy is below 75%, or the most recent attempt was a miss (repetitions
+// reset to 0). Cards never attempted are "new", not weak. Cards sitting at
+// 80%+ with an intact streak are deliberately excluded — that's the whole
+// point: stop resurfacing things already known.
+function cardAttempts(s) { return (s&&s.correctCount||0) + (s&&s.wrongCount||0); }
+function cardAccuracy(s) { var t = cardAttempts(s); return t ? (s.correctCount||0)/t : null; }
+function isWeakCard(s) {
+    if (!s || !s.lastReviewed) return false; // never studied -> "new", not weak
+    var t = cardAttempts(s);
+    if (t) return (s.correctCount||0)/t < 0.75 || (s.repetitions||0) === 0;
+    // Legacy card studied before correctCount/wrongCount existed: the only
+    // signal available is whether its last attempt was a miss (repetitions
+    // resets to 0 on wrong). True accuracy tracking takes over once it's
+    // reviewed again.
+    return (s.repetitions||0) === 0;
+}
+function weaknessScore(s) {
+    if (!s) return 0;
+    var t = cardAttempts(s);
+    if (!t) return (s.repetitions||0)===0 ? 10 : 0;
+    var acc = (s.correctCount||0)/t;
+    return (1-acc)*10 + (s.wrongCount||0) + ((s.repetitions||0)===0 ? 5 : 0);
+}
 function ensureSRS() {
     for (var subj in cardContent) {
         if (!srsData[subj]) srsData[subj] = {};
@@ -1168,13 +1220,14 @@ function ensureSRS() {
 function saveLocal() {
     ensureSRS();
     try {
-        localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent));
-        localStorage.setItem('monoFlashSRSData',     JSON.stringify(srsData));
-        localStorage.setItem('monoFlashBookmarks',   JSON.stringify(bookmarks));
+        localStorage.setItem(idKey('monoFlashCardContent'), JSON.stringify(cardContent));
+        localStorage.setItem(idKey('monoFlashSRSData'),     JSON.stringify(srsData));
+        localStorage.setItem(idKey('monoFlashBookmarks'),   JSON.stringify(bookmarks));
+        localStorage.setItem(dailyLogKey(),                 JSON.stringify(dailyLog));
     } catch(e) {
         if (e.name === 'QuotaExceededError' || e.code === 22) {
             // iOS Safari 5MB limit hit — try saving just cardContent (most critical)
-            try { localStorage.setItem('monoFlashCardContent', JSON.stringify(cardContent)); } catch(e2) {}
+            try { localStorage.setItem(idKey('monoFlashCardContent'), JSON.stringify(cardContent)); } catch(e2) {}
             if (!document.getElementById('quota-warning')) {
                 var banner = document.createElement('div');
                 banner.id = 'quota-warning';
@@ -1196,7 +1249,7 @@ async function pushToCloud() {
         setRing(50);
         var response = await fetch(WORKER_URL+'?deviceId='+encodeURIComponent(DEVICE_ID), {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({cardContent,srsData,bookmarks})
+            body: JSON.stringify({cardContent,srsData,bookmarks,dailyLog})
         });
         setRing(70);
         var result = await response.json();
@@ -1245,6 +1298,7 @@ async function readDatabase() {
             cardContent = result.data.cardContent||{};
             srsData     = result.data.srsData||{};
             bookmarks   = result.data.bookmarks||{};
+            dailyLog    = result.data.dailyLog||{};
             migrateData();
             saveLocal();
             renderSidebar(); loadSidebarState();
@@ -1629,7 +1683,7 @@ function loadLesson(lessonName) {
     currentLesson = lessonName;
     cardIndex=0; sessionStats={total:0,correct:0};
     missedCardsThisSession.clear();
-    currentContainer='all'; reviewMissedMode=false; reviewBookmarksMode=false;
+    currentContainer='all'; reviewMissedMode=false; reviewBookmarksMode=false; reviewWeakMode=false;
 
     var footer = document.getElementById('lessons-footer');
     if (footer) { footer.classList.remove('show'); footer.innerHTML = ''; }
@@ -1727,6 +1781,7 @@ function renderCard() {
         back.textContent  = currentLesson ? '' : 'Browse your subjects';
         if (timerWrap) timerWrap.classList.remove('visible');
         document.getElementById('bookmark-icon').style.display='none';
+        var wb0 = document.getElementById('weak-badge'); if (wb0) wb0.style.display='none';
         updateBookmarkIcon();
         requestAnimationFrame(function(){ card.classList.remove('no-transition'); });
         return;
@@ -1755,6 +1810,16 @@ function renderCard() {
     if (timerSvg) timerSvg.classList.toggle('hidden', !timerEnabled);
     if (cardLabel) cardLabel.textContent = 'Card '+(cardIndex+1)+' of '+shuffledCards.length;
     if (cardBar) cardBar.style.width = (cardIndex/shuffledCards.length*100)+'%';
+    var wb = document.getElementById('weak-badge');
+    if (wb) {
+        if (reviewWeakMode) {
+            var acc = cardAccuracy(cur.srs);
+            wb.style.display = 'block';
+            wb.textContent = acc===null ? 'Weak focus' : 'Weak focus · '+Math.round(acc*100)+'% accuracy so far';
+        } else {
+            wb.style.display = 'none';
+        }
+    }
 
     updateBookmarkIcon();
     requestAnimationFrame(function(){ card.classList.remove('no-transition'); });
@@ -1995,27 +2060,33 @@ function renderContStats() {}
 function renderLessonStats() {}
 
 // ── SETS ────────────────────────────────────────────────────────────────
+function getWeakCount(subj, topic, lesson) {
+    var srs = getLessonSRS(subj, topic, lesson);
+    return srs.filter(isWeakCard).length;
+}
 function renderContSel() {
     var wrap = document.getElementById('cont-selector');
     var buttons = document.getElementById('cont-buttons');
     var info = document.getElementById('cont-info');
     var headerLabel = document.getElementById('cont-header-label');
     if (!currentLesson) { wrap.style.display='none'; return; }
-    if (getLessonType(currentSubject, currentTopic, currentLesson) === 'saq') { wrap.style.display='none'; return; }
     var all = getLessonCards(currentSubject, currentTopic, currentLesson);
     var num = Math.ceil(all.length/CARDS_PER_CONTAINER);
-    if (all.length<=CARDS_PER_CONTAINER&&missedCardsThisSession.size===0&&getBookmarkCount()===0){ wrap.style.display='none'; return; }
+    var weakCount = getWeakCount(currentSubject, currentTopic, currentLesson);
+    if (all.length<=CARDS_PER_CONTAINER&&missedCardsThisSession.size===0&&getBookmarkCount()===0&&weakCount===0){ wrap.style.display='none'; return; }
     wrap.style.display='block'; buttons.innerHTML='';
     if (headerLabel) headerLabel.textContent = 'Sets';
     var bmBtn = mkCBtn('Bookmarks ('+getBookmarkCount()+')', reviewBookmarksMode, function(){ toggleReviewBookmarks(); });
     bmBtn.classList.add('bookmarks'); buttons.appendChild(bmBtn);
     var msBtn = mkCBtn('Missed ('+missedCardsThisSession.size+')', reviewMissedMode, function(){ toggleReviewMissed(); });
     msBtn.classList.add('missed'); buttons.appendChild(msBtn);
-    buttons.appendChild(mkCBtn('All', currentContainer==='all'&&!reviewMissedMode&&!reviewBookmarksMode, function(){ selectContainer('all'); }));
+    var wkBtn = mkCBtn('Weak ('+weakCount+')', reviewWeakMode, function(){ toggleReviewWeak(); });
+    wkBtn.classList.add('weak'); buttons.appendChild(wkBtn);
+    buttons.appendChild(mkCBtn('All', currentContainer==='all'&&!reviewMissedMode&&!reviewBookmarksMode&&!reviewWeakMode, function(){ selectContainer('all'); }));
     for (var i=0; i<num; i++) {
         (function(i){
             var s0=i*CARDS_PER_CONTAINER, e0=Math.min(s0+CARDS_PER_CONTAINER,all.length);
-            buttons.appendChild(mkCBtn('S'+(i+1)+' ('+(e0-s0)+')', currentContainer===i&&!reviewMissedMode&&!reviewBookmarksMode, function(){ selectContainer(i); }));
+            buttons.appendChild(mkCBtn('S'+(i+1)+' ('+(e0-s0)+')', currentContainer===i&&!reviewMissedMode&&!reviewBookmarksMode&&!reviewWeakMode, function(){ selectContainer(i); }));
         })(i);
     }
     info.textContent = all.length+' cards · '+CARDS_PER_CONTAINER+' per set';
@@ -2026,7 +2097,7 @@ function mkCBtn(label, active, fn) {
     b.textContent=label; b.onclick=fn; return b;
 }
 function selectContainer(id) {
-    currentContainer=id; reviewMissedMode=false; reviewBookmarksMode=false; cardIndex=0;
+    currentContainer=id; reviewMissedMode=false; reviewBookmarksMode=false; reviewWeakMode=false; cardIndex=0;
     if (!currentLesson) return;
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var srs   = getLessonSRS(currentSubject, currentTopic, currentLesson);
@@ -2044,7 +2115,7 @@ function selectContainer(id) {
 }
 function toggleReviewMissed() {
     if (!missedCardsThisSession.size){ alert('No missed cards yet!'); return; }
-    reviewMissedMode=!reviewMissedMode; reviewBookmarksMode=false; cardIndex=0;
+    reviewMissedMode=!reviewMissedMode; reviewBookmarksMode=false; reviewWeakMode=false; cardIndex=0;
     if (reviewMissedMode) {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
@@ -2054,12 +2125,29 @@ function toggleReviewMissed() {
 }
 function toggleReviewBookmarks() {
     if (!getBookmarkCount()){ alert('No bookmarked cards yet!'); return; }
-    reviewBookmarksMode=!reviewBookmarksMode; reviewMissedMode=false; cardIndex=0;
+    reviewBookmarksMode=!reviewBookmarksMode; reviewMissedMode=false; reviewWeakMode=false; cardIndex=0;
     if (reviewBookmarksMode) {
         var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
         var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
         var bmIdxs=getLessonBookmarks(currentSubject,currentTopic,currentLesson);
         shuffledCards=shuffle(bmIdxs.map(function(i){ return {q:cards[i].q,a:cards[i].a,type:cards[i].type,options:cards[i].options,correct:cards[i].correct,mark:cards[i].mark,srs:srs[i]||createSRS(),_index:i}; }).filter(function(c){ return c.q; }));
+    } else { selectContainer(currentContainer); }
+    renderCard(); renderContSel();
+}
+// Weak set: cards with sub-75% lifetime accuracy or a current miss streak,
+// worst-first — not shuffled, since the point is to front-load what's
+// actually shaky instead of re-rolling the dice on cards already mastered.
+function toggleReviewWeak() {
+    var srsCheck = getLessonSRS(currentSubject, currentTopic, currentLesson);
+    if (!srsCheck.filter(isWeakCard).length){ alert('No weak cards right now — your accuracy is solid here!'); return; }
+    reviewWeakMode=!reviewWeakMode; reviewMissedMode=false; reviewBookmarksMode=false; cardIndex=0;
+    if (reviewWeakMode) {
+        var cards=getLessonCards(currentSubject,currentTopic,currentLesson);
+        var srs=getLessonSRS(currentSubject,currentTopic,currentLesson);
+        shuffledCards = cards
+            .map(function(c,i){ return {q:c.q,a:c.a,type:c.type,options:c.options,correct:c.correct,mark:c.mark,srs:srs[i]||createSRS(),_index:i}; })
+            .filter(function(c){ return c.q && isWeakCard(c.srs); })
+            .sort(function(a,b){ return weaknessScore(b.srs)-weaknessScore(a.srs); });
     } else { selectContainer(currentContainer); }
     renderCard(); renderContSel();
 }
@@ -2992,11 +3080,12 @@ function downloadDatabaseJson() {
 function resetAllData() {
     if (!confirm('⚠️ DELETE ALL DATA? Use Export first to backup.')) return;
     if (!confirm('🔴 Last chance!')) return;
-    localStorage.removeItem('monoFlashCardContent');
-    localStorage.removeItem('monoFlashSRSData');
-    localStorage.removeItem('monoFlashBookmarks');
+    localStorage.removeItem(idKey('monoFlashCardContent'));
+    localStorage.removeItem(idKey('monoFlashSRSData'));
+    localStorage.removeItem(idKey('monoFlashBookmarks'));
+    localStorage.removeItem(dailyLogKey());
     localStorage.removeItem('monoFlashSidebarState');
-    cardContent={}; srsData={}; bookmarks={};
+    cardContent={}; srsData={}; bookmarks={}; dailyLog={};
     currentSubject=null; currentTopic=null; currentLesson=null; shuffledCards=[];
     renderSidebar(); loadSidebarState(); switchToHome();
     alert('✅ All data cleared.');
@@ -3125,7 +3214,7 @@ function restartSession() {
     document.querySelector('.summary-modal').classList.remove('full-lesson');
     stopTimer();
     cardIndex=0; sessionStats={total:0,correct:0}; missedCardsThisSession.clear();
-    currentContainer='all'; reviewMissedMode=false; reviewBookmarksMode=false;
+    currentContainer='all'; reviewMissedMode=false; reviewBookmarksMode=false; reviewWeakMode=false;
     buildShuffledCards(); renderCard(); renderContSel();
     if (timerEnabled) startTimer();
 }
