@@ -3051,10 +3051,10 @@ function renderPlanRow(r, num, isQueued) {
     var html = '<div class="plan-row" onclick="goToLessonFromHome(\'' + escAttr(r.subj) + '\',\'' + escAttr(r.topic) + '\',\'' + escAttr(r.lesson) + '\')">';
     html += '<span class="plan-row-num">' + num + '</span>';
     html += '<div class="plan-row-main">';
-    html += '<div class="plan-row-name">' + escHtml(r.lesson) + lessonTypeBadgeHtml(r.lessonType) + '</div>';
-    var crumb = escHtml(r.subj) + ' › ' + escHtml(r.topic);
-    if (r.divider) crumb += ' › ' + escHtml(r.divider);
-    html += '<div class="plan-row-path">' + crumb + '</div>';
+    var fullPath = escHtml(r.subj) + ' › ' + escHtml(r.topic);
+    if (r.divider) fullPath += ' › ' + escHtml(r.divider);
+    fullPath += ' › ' + escHtml(r.lesson);
+    html += '<div class="plan-row-name">' + fullPath + lessonTypeBadgeHtml(r.lessonType) + '</div>';
     html += '<div class="plan-row-action">' + escHtml(r.action) + '</div>';
     html += '</div><div class="plan-row-right">';
     if (isQueued) {
