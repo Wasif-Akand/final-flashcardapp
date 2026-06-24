@@ -7,6 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash — by Akand</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
 
     <script>
         const WORKER_URL = 'https://monoflash.wasif-akand08.workers.dev';
@@ -264,14 +268,25 @@
         .db-item-content{flex:1;min-width:0;}
         .db-key{font-weight:700;margin-bottom:6px;word-wrap:break-word;font-size:.9rem;}
         .db-val{color:var(--dim);font-size:.85rem;word-wrap:break-word;line-height:1.4;}
-        .db-item-actions{display:flex;gap:6px;flex-direction:column;flex-shrink:0;}
+        .db-item-actions{display:flex;gap:4px;flex-direction:row;flex-shrink:0;align-items:flex-start;}
+        .db-btn-icon{width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;border-radius:7px;min-width:28px;}
         .db-btn-edit{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);color:#ffd700;}
-        .db-btn-edit:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);}
+        .db-btn-edit:hover{background:rgba(255,215,0,.18);border-color:rgba(255,215,0,.5);transform:translateY(-1px);}
         .db-btn-delete{background:rgba(231,76,60,.08);border-color:rgba(231,76,60,.3);color:#e74c3c;}
-        .db-btn-delete:hover{background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.5);}
+        .db-btn-delete:hover{background:rgba(231,76,60,.18);border-color:rgba(231,76,60,.5);transform:translateY(-1px);}
         .db-btn-bm{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);color:#ffd700;}
-        .db-btn-bm:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);}
+        .db-btn-bm:hover{background:rgba(255,215,0,.18);border-color:rgba(255,215,0,.5);transform:translateY(-1px);}
         .db-btn-bm.active{background:rgba(255,215,0,.22);border-color:#ffd700;color:#ffd700;}
+        .db-edit-form{width:100%;display:flex;flex-direction:column;gap:10px;}
+        .db-edit-field{display:flex;flex-direction:column;gap:5px;}
+        .db-edit-label{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--dimmer);}
+        .db-edit-opt-row{display:flex;align-items:center;gap:6px;}
+        .db-edit-opt{flex:1;}
+        .db-correct-radio{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:var(--dim);cursor:pointer;padding:0 8px;height:34px;border-radius:6px;border:1px solid var(--border-b);background:var(--surface);white-space:nowrap;flex-shrink:0;transition:all var(--tf);user-select:none;}
+        .db-correct-radio input[type=radio]{accent-color:#2ecc71;cursor:pointer;}
+        .db-correct-radio:has(input:checked){border-color:rgba(46,204,113,.5);background:rgba(46,204,113,.08);color:#2ecc71;}
+        .db-edit-actions{display:flex;gap:8px;padding-top:2px;}
+        .db-edit-actions .btn{padding:8px 16px;font-size:.78rem;}
         .db-item-edit{display:flex;gap:12px;align-items:flex-start;flex:1;}
         .db-edit-inputs{flex:1;display:flex;flex-direction:column;gap:8px;}
         .db-edit-input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border-b);padding:10px;border-radius:6px;font-family:inherit;font-size:.85rem;transition:all var(--tf);}
@@ -2227,7 +2242,7 @@ function dbCardContentHtml(c) {
         });
         html += '</div>';
     } else if (c.type === 'saq') {
-        html = '<div class="db-item-content db-saq-row"><div class="db-key">'+escHtml(c.q)+'</div><span class="db-saq-mark">'+escHtml(c.mark || '1')+'</span></div>';
+        return '<div class="db-item-content db-saq-row"><div class="db-key">'+escHtml(c.q)+'</div><span class="db-saq-mark">Mark: '+escHtml(c.mark || '1')+'</span></div>';
     } else {
         html += '<div class="db-val">'+escHtml(c.a)+'</div>';
     }
@@ -2276,9 +2291,9 @@ function renderDbList() {
             html += '<div class="db-item" id="db-item-'+i+'">';
             html += dbCardContentHtml(c);
             html += '<div class="db-item-actions">';
-            html += '<button class="btn db-btn-bm'+(isBm?' active':'')+'" style="padding:6px 12px;font-size:.75rem;" title="'+(isBm?'Remove bookmark':'Add bookmark')+'" onclick="toggleBookmarkFromDb(\''+escAttr(currentLesson)+'\','+i+')">'+(isBm?'★':'☆')+'</button>';
-            html += '<button class="btn db-btn-edit" style="padding:6px 12px;font-size:.75rem;" onclick="editCard('+i+')">✏️</button>';
-            html += '<button class="btn db-btn-delete" style="padding:6px 12px;font-size:.75rem;" onclick="deleteCard('+i+')">Del</button>';
+            html += '<button class="btn db-btn-icon db-btn-bm'+(isBm?' active':'')+'" title="'+(isBm?'Remove bookmark':'Add bookmark')+'" onclick="toggleBookmarkFromDb(\''+escAttr(currentLesson)+'\','+i+')">'+(isBm?'★':'☆')+'</button>';
+            html += '<button class="btn db-btn-icon db-btn-edit" title="Edit" onclick="editCard('+i+')">✎</button>';
+            html += '<button class="btn db-btn-icon db-btn-delete" title="Delete" onclick="deleteCard('+i+')">✕</button>';
             html += '</div></div>';
         });
         html += '</div>';
@@ -2299,8 +2314,8 @@ function renderDbList() {
                 html += '<div class="db-item">';
                 html += dbCardContentHtml(c);
                 html += '<div class="db-item-actions">';
-                html += '<button class="btn db-btn-bm'+(isBm?' active':'')+'" style="padding:6px 12px;font-size:.75rem;" title="'+(isBm?'Remove bookmark':'Add bookmark')+'" onclick="toggleBookmarkFromDb(\''+escAttr(ln)+'\','+i+')">'+(isBm?'★':'☆')+'</button>';
-                html += '<button class="btn db-btn-delete" style="padding:6px 12px;font-size:.75rem;" onclick="deleteCardFromLesson(\''+escAttr(ln)+'\','+i+')">Del</button>';
+                html += '<button class="btn db-btn-icon db-btn-bm'+(isBm?' active':'')+'" title="'+(isBm?'Remove bookmark':'Add bookmark')+'" onclick="toggleBookmarkFromDb(\''+escAttr(ln)+'\','+i+')">'+(isBm?'★':'☆')+'</button>';
+                html += '<button class="btn db-btn-icon db-btn-delete" title="Delete" onclick="deleteCardFromLesson(\''+escAttr(ln)+'\','+i+')">✕</button>';
                 html += '</div></div>';
             });
             html += '</div>';
@@ -2473,30 +2488,88 @@ function editCard(idx) {
     if (!currentLesson) return;
     var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
     var card = cards[idx];
-    if (card.type === 'mcq') { alert('MCQ cards can\'t be edited inline yet — delete and re-import the line instead.'); return; }
-    var newQ = prompt('Edit Question:', card.q);
-    if (newQ===null) return;
-    newQ=newQ.trim();
-    if (!newQ){ alert('Cannot be empty.'); return; }
-    if (card.type === 'saq') {
-        var newMark = prompt('Edit Mark:', card.mark || '1');
-        if (newMark===null) return;
-        cards[idx]={q:newQ,mark:String(newMark).trim() || '1',type:'saq'};
-    } else {
-        var newA = prompt('Edit Answer:', card.a);
-        if (newA===null) return;
-        newA=newA.trim();
-        if (!newA){ alert('Cannot be empty.'); return; }
-        cards[idx]={q:newQ,a:newA};
-    }
-    saveData();
-    if (shuffledCards[cardIndex]&&shuffledCards[cardIndex]._index===idx){
-        shuffledCards[cardIndex].q=newQ;
-        if (card.type === 'saq') {
-            shuffledCards[cardIndex].mark = cards[idx].mark;
-        } else {
-            shuffledCards[cardIndex].a=newA;
+    if (!card) return;
+    var type = card.type || 'flashcard';
+    var itemEl = document.getElementById('db-item-' + idx);
+    if (!itemEl) return;
+
+    var f = '<div class="db-edit-form">';
+    // Question field
+    f += '<div class="db-edit-field"><label class="db-edit-label">Question</label>';
+    f += '<textarea class="db-edit-input" id="eeq'+idx+'" rows="2">'+escHtml(card.q)+'</textarea></div>';
+
+    if (type === 'mcq') {
+        var opts = card.options && card.options.length ? card.options : ['','','',''];
+        f += '<div class="db-edit-field"><label class="db-edit-label">Options — pick the correct one</label>';
+        for (var i = 0; i < 4; i++) {
+            var isC = opts[i] && String(opts[i]).trim().toLowerCase() === String(card.correct||'').trim().toLowerCase();
+            f += '<div class="db-edit-opt-row">';
+            f += '<input class="db-edit-input db-edit-opt" id="eeo'+idx+'_'+i+'" value="'+escAttr(opts[i]||'')+'" placeholder="Option '+(i+1)+'">';
+            f += '<label class="db-correct-radio"><input type="radio" name="eer'+idx+'" value="'+i+'"'+(isC?' checked':'')+'>✓ Correct</label>';
+            f += '</div>';
         }
+        f += '</div>';
+    } else if (type === 'saq') {
+        f += '<div class="db-edit-field"><label class="db-edit-label">Mark</label>';
+        f += '<input class="db-edit-input" id="eem'+idx+'" type="text" value="'+escAttr(card.mark||'1')+'" style="width:80px;"></div>';
+    } else {
+        f += '<div class="db-edit-field"><label class="db-edit-label">Answer</label>';
+        f += '<textarea class="db-edit-input" id="eea'+idx+'" rows="2">'+escHtml(card.a||'')+'</textarea></div>';
+    }
+
+    f += '<div class="db-edit-actions">';
+    f += '<button class="btn btn-primary" onclick="saveCardEdit('+idx+')">Save</button>';
+    f += '<button class="btn" onclick="renderDbList()">Cancel</button>';
+    f += '</div></div>';
+
+    itemEl.innerHTML = f;
+    var qEl = document.getElementById('eeq' + idx);
+    if (qEl) { qEl.focus(); qEl.setSelectionRange(qEl.value.length, qEl.value.length); }
+}
+
+function saveCardEdit(idx) {
+    if (!currentLesson) return;
+    var cards = getLessonCards(currentSubject, currentTopic, currentLesson);
+    var card = cards[idx];
+    if (!card) return;
+    var type = card.type || 'flashcard';
+
+    var qEl = document.getElementById('eeq' + idx);
+    if (!qEl) return;
+    var newQ = qEl.value.trim();
+    if (!newQ) { qEl.focus(); alert('Question cannot be empty.'); return; }
+
+    if (type === 'mcq') {
+        var opts = [];
+        for (var i = 0; i < 4; i++) {
+            var el = document.getElementById('eeo' + idx + '_' + i);
+            opts.push(el ? el.value.trim() : '');
+        }
+        if (opts.some(function(o){ return !o; })) { alert('All 4 options must be filled in.'); return; }
+        var r = document.querySelector('input[name="eer'+idx+'"]:checked');
+        if (!r) { alert('Select which option is correct.'); return; }
+        var correct = opts[parseInt(r.value, 10)];
+        cards[idx] = { q:newQ, a:correct, type:'mcq', options:opts, correct:correct };
+    } else if (type === 'saq') {
+        var mEl = document.getElementById('eem' + idx);
+        var newMark = mEl ? (mEl.value.trim() || '1') : '1';
+        cards[idx] = { q:newQ, mark:newMark, type:'saq' };
+    } else {
+        var aEl = document.getElementById('eea' + idx);
+        if (!aEl) return;
+        var newA = aEl.value.trim();
+        if (!newA) { aEl.focus(); alert('Answer cannot be empty.'); return; }
+        cards[idx] = { q:newQ, a:newA };
+    }
+
+    saveData();
+    if (shuffledCards[cardIndex] && shuffledCards[cardIndex]._index === idx) {
+        var upd = cards[idx];
+        shuffledCards[cardIndex].q = upd.q;
+        shuffledCards[cardIndex].a = upd.a;
+        shuffledCards[cardIndex].mark = upd.mark;
+        shuffledCards[cardIndex].options = upd.options;
+        shuffledCards[cardIndex].correct = upd.correct;
         renderCard();
     }
     renderDbList();
