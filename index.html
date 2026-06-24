@@ -7,10 +7,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MonoFlash">
     <title>MonoFlash — by Akand</title>
-    <link rel="icon" href="favicon.ico" sizes="any">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
 
     <script>
         const WORKER_URL = 'https://monoflash.wasif-akand08.workers.dev';
@@ -2628,6 +2624,16 @@ var PLAN_TIERS = [
     { key:'maintain', rank:'5', title:'Refresh',         desc:'Stale review to lock in memory' }
 ];
 
+function getDividerForLesson(subj, topic, lessonName) {
+    var t = cardContent[subj] && cardContent[subj][topic];
+    if (!t || !t.dividers) return null;
+    for (var did in t.dividers) {
+        var div = t.dividers[did];
+        if (div.lessons && div.lessons.indexOf(lessonName) !== -1) return div.name;
+    }
+    return null;
+}
+
 function analyzeAllLessons() {
     var rows = [];
     for (var subj in cardContent) {
@@ -2654,7 +2660,8 @@ function analyzeAllLessons() {
                     reviewed:reviewed, notStarted:cards.length - reviewed,
                     masteryPct:masteryPct, reviewedPct:reviewedPct,
                     lastStudied:lastStudied, staleDays:staleDays,
-                    lessonType:getLessonType(subj, topic, ln)
+                    lessonType:getLessonType(subj, topic, ln),
+                    divider:getDividerForLesson(subj, topic, ln)
                 };
                 row.tier = classifyLessonTier(row);
                 row.priority = computeLessonPriority(row);
@@ -3044,8 +3051,10 @@ function renderPlanRow(r, num, isQueued) {
     var html = '<div class="plan-row" onclick="goToLessonFromHome(\'' + escAttr(r.subj) + '\',\'' + escAttr(r.topic) + '\',\'' + escAttr(r.lesson) + '\')">';
     html += '<span class="plan-row-num">' + num + '</span>';
     html += '<div class="plan-row-main">';
-    html += '<div class="plan-row-name">' + escHtml(r.subj) + ' &nbsp;\u203a&nbsp; ' + escHtml(r.lesson) + lessonTypeBadgeHtml(r.lessonType) + '</div>';
-    html += '<div class="plan-row-path">' + escHtml(r.topic) + '</div>';
+    html += '<div class="plan-row-name">' + escHtml(r.lesson) + lessonTypeBadgeHtml(r.lessonType) + '</div>';
+    var crumb = escHtml(r.subj) + ' › ' + escHtml(r.topic);
+    if (r.divider) crumb += ' › ' + escHtml(r.divider);
+    html += '<div class="plan-row-path">' + crumb + '</div>';
     html += '<div class="plan-row-action">' + escHtml(r.action) + '</div>';
     html += '</div><div class="plan-row-right">';
     if (isQueued) {
