@@ -191,16 +191,18 @@
         .bookmark-icon:hover{transform:scale(1.2) rotate(-10deg);filter:drop-shadow(0 4px 8px rgba(0,0,0,.8));}
         .bookmark-icon.active{filter:drop-shadow(0 0 8px rgba(255,215,0,.6));}
         .card-container{flex:1;display:flex;justify-content:center;align-items:center;perspective:1600px;padding:8px 0;min-height:0;}
-        /* CARD TRANSITION */
-        .card{width:100%;max-width:420px;height:clamp(200px,35vh,300px);position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1),box-shadow var(--tn);cursor:pointer;box-shadow:var(--sh-lg);}
+        /* CARD TRANSITION — 2D squash-swap flip (avoids 3D rotateY/backface-visibility text blur) */
+        .card{width:100%;max-width:420px;height:clamp(200px,35vh,300px);position:relative;transition:transform .28s cubic-bezier(.4,0,.2,1),box-shadow var(--tn);cursor:pointer;box-shadow:var(--sh-lg);}
         .card:hover{box-shadow:0 12px 48px rgba(0,0,0,1),0 0 0 1px rgba(255,255,255,.1);}
-        .card.flipped{transform:rotateY(180deg) scale(1.02);}
-        .card.flipped:hover{transform:rotateY(180deg) scale(1.03);}
         .card.no-transition{transition:none !important;}
-        .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translateZ(0);display:flex;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:24px 20px;font-size:clamp(1rem,3vw,1.25rem);font-weight:500;line-height:1.5;overflow-y:auto;transition:border-color var(--tn);touch-action:manipulation;}
+        .card-face{position:absolute;width:100%;height:100%;display:flex;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--border-b);border-radius:16px;background:var(--surface-el);padding:24px 20px;font-size:clamp(1rem,3vw,1.25rem);font-weight:500;line-height:1.5;overflow-y:auto;transition:border-color var(--tn);touch-action:manipulation;}
         .card-face::-webkit-scrollbar{width:4px;}
         .card-face::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:2px;}
-        .card-back{transform:rotateY(180deg) translateZ(0.01px);background:#050505;border-color:var(--accent);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),0 0 24px rgba(255,255,255,.1);}
+        #card-back{display:none;}
+        .card.flipped #card-front{display:none;}
+        .card.flipped #card-back{display:flex;}
+        .card-back{background:#050505;border-color:var(--accent);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),0 0 24px rgba(255,255,255,.1);}
+        .card-face-content{max-width:100%;}
         .controls{display:flex;gap:10px;justify-content:center;margin-top:10px;padding:0 8px;flex-shrink:0;}
         .btn{padding:12px 20px;border-radius:10px;border:1px solid var(--border-b);background:var(--surface);color:#fff;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-size:.85rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:var(--sh-sm);user-select:none;position:relative;touch-action:manipulation;}
         .btn:hover{transform:translateY(-2px);background:var(--surface-el);box-shadow:0 6px 20px rgba(0,0,0,.9),0 0 12px rgba(255,255,255,.08);border-color:var(--accent);}
@@ -888,8 +890,8 @@
             <div class="card-container">
                 <div class="card" id="active-card">
                     <div class="bookmark-icon" id="bookmark-icon" onclick="toggleBookmark(event)">☆</div>
-                    <div class="card-face" onclick="flipCard()" id="card-front">Select a topic to begin</div>
-                    <div class="card-face card-back" onclick="flipCard()" id="card-back">Your journey starts here</div>
+                    <div class="card-face" onclick="flipCard()" id="card-front"><div class="card-face-content" id="card-front-content">Select a topic to begin</div></div>
+                    <div class="card-face card-back" onclick="flipCard()" id="card-back"><div class="card-face-content" id="card-back-content">Your journey starts here</div></div>
                 </div>
             </div>
             <div class="mcq-wrap" id="mcq-wrap">
@@ -1819,7 +1821,7 @@ function toggleBookmarkFromDb(lessonName, cardIdx) {
 // ── FLASHCARDS ─────────────────────────────────────────────────────────
 function renderCard() {
     var card=document.getElementById('active-card');
-    var front=document.getElementById('card-front'), back=document.getElementById('card-back');
+    var front=document.getElementById('card-front-content'), back=document.getElementById('card-back-content');
     var timerWrap=document.getElementById('timer-wrap');
     var cardLabel=document.getElementById('timer-card-label');
     var cardBar=document.getElementById('timer-card-bar');
@@ -1828,6 +1830,8 @@ function renderCard() {
     // CRITICAL FIX: instantly snap to front face before updating text
     card.classList.add('no-transition');
     card.classList.remove('flipped');
+    card.style.transform = '';
+    flipAnimating = false;
     void card.offsetHeight;
 
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) {
@@ -1944,10 +1948,31 @@ function selectMCQOption(opt, btnEl) {
     setTimeout(function(){ nextCard(isCorrect); }, isCorrect ? 550 : 1100);
 }
 
+var flipAnimating = false;
 function flipCard() {
     if (!shuffledCards.length||cardIndex>=shuffledCards.length) return;
     if (shuffledCards[cardIndex].type === 'mcq' || shuffledCards[cardIndex].type === 'saq') return;
-    document.getElementById('active-card').classList.toggle('flipped');
+    if (flipAnimating) return;
+    var card = document.getElementById('active-card');
+    if (card.classList.contains('no-transition')) {
+        card.classList.toggle('flipped');
+        return;
+    }
+    flipAnimating = true;
+    card.style.transform = 'rotateY(90deg) scale(1.02)';
+    setTimeout(function(){
+        card.classList.toggle('flipped');
+        var onSettled = function(e){
+            if (e && e.propertyName !== 'transform') return;
+            card.removeEventListener('transitionend', onSettled);
+            card.style.transform = '';
+            flipAnimating = false;
+        };
+        card.addEventListener('transitionend', onSettled);
+        card.style.transform = 'rotateY(0deg)';
+        // Safety net in case transitionend doesn't fire (e.g. tab backgrounded)
+        setTimeout(onSettled, 340);
+    }, 280);
 }
 function previousCard() {
     if (!currentLesson||cardIndex<=0) return;
