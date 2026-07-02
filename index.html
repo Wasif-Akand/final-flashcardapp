@@ -1911,6 +1911,7 @@ function renderMCQOptions(c) {
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'mcq-option';
+        b.dataset.optValue = opt; // raw text, preserved even after KaTeX rewrites the visible DOM
         var letter = document.createElement('span');
         letter.className = 'mcq-option-letter';
         letter.textContent = String.fromCharCode(65+idx);
@@ -1941,8 +1942,8 @@ function selectMCQOption(opt, btnEl) {
     var allBtns = document.querySelectorAll('#mcq-options-wrap .mcq-option');
     allBtns.forEach(function(b){
         b.disabled = true;
-        var t = b.querySelector('.mcq-option-text');
-        if (t && t.textContent.trim().toLowerCase() === correctNorm) b.classList.add('correct');
+        var val = String(b.dataset.optValue||'').trim().toLowerCase();
+        if (val === correctNorm) b.classList.add('correct');
     });
     if (!isCorrect) btnEl.classList.add('wrong');
     setTimeout(function(){ nextCard(isCorrect); }, isCorrect ? 550 : 1100);
